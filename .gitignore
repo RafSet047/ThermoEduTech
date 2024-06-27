@@ -1,0 +1,7 @@
+dl-proj/
+venv/
+dataset/
+*.zip
+*.xlsx
+.DS_Store
+*.pyc
