@@ -71,7 +71,7 @@ class DataWrapper:
         return x.ewm(span=period, adjust=True).mean()
 
     @staticmethod
-    def standardize(x: Union[np.array, pd.Series], mean: Optional[float], std: Optional[float]) -> Tuple[Union[np.array, pd.Series], Tuple[float, float]]:
+    def standardize(x: Union[np.array, pd.Series], mean: Optional[float] = None, std: Optional[float] = None) -> Tuple[Union[np.array, pd.Series], Tuple[float, float]]:
         """
         Standardizes the input data by removing the mean and scaling to unit variance.
 
@@ -90,7 +90,7 @@ class DataWrapper:
         return (x - mean) / (std + 1e-6), (mean, std)
     
     @staticmethod
-    def min_max_scale(x: Union[np.array, pd.Series], min_: Optional[float], max_: Optional[float]) -> Tuple[Union[np.array, pd.Series], Tuple[float, float]]:
+    def min_max_scale(x: Union[np.array, pd.Series], min_: Optional[float] = None, max_: Optional[float] = None) -> Tuple[Union[np.array, pd.Series], Tuple[float, float]]:
         """
         Scales the input data to a given range [0, 1] using min-max scaling.
 
@@ -109,7 +109,7 @@ class DataWrapper:
         return (x - min_) / (max_ - min_ + 1e-6), (min_, max_)
 
     @staticmethod
-    def scale_quantiles(x: Union[np.array, pd.Series], median: Optional[float], q25: Optional[float], q75: Optional[float]) -> Tuple[Union[np.array, pd.Series], Tuple[float, float]]:
+    def scale_quantiles(x: Union[np.array, pd.Series], median: Optional[float] = None, q25: Optional[float] = None, q75: Optional[float] = None) -> Tuple[Union[np.array, pd.Series], Tuple[float, float]]:
         """
         Scales the input data using the median and interquartile range (IQR).
 
@@ -149,44 +149,44 @@ class DataWrapper:
         self._valid_df = self._df.iloc[train_size:train_size+valid_size, :].copy()
         self._test_df = self._df.iloc[train_size+valid_size:, :].copy()
 
-    def standardize_data(self):
+    def standardize_data(self, columns = List[str]):
         """
         Standardizes the training, validation, and test DataFrames using the mean and standard deviation of the training data.
         
         The mean and standard deviation are calculated from the training data and then applied to the validation and test data to standardize them.
         The mean and standard deviation are also saved as CSV files in the 'stats' directory within the output directory.
         """
-        self._train_df, (train_mean, train_std) = DataWrapper.standardize(self._train_df)
-        self._valid_df, _ = DataWrapper.standardize(self._valid_df, train_mean, train_std)
-        self._test_df, _ = DataWrapper.standardize(self._test_df, train_mean, train_std)
+        self._train_df[columns], (train_mean, train_std) = DataWrapper.standardize(self._train_df[columns])
+        self._valid_df[columns], _ = DataWrapper.standardize(self._valid_df[columns], train_mean, train_std)
+        self._test_df[columns], _ = DataWrapper.standardize(self._test_df[columns], train_mean, train_std)
 
         train_mean.to_csv(os.path.join(self.output_dir, 'stats', 'mean.csv'))
         train_std.to_csv(os.path.join(self.output_dir, 'stats', 'std.csv'))
 
-    def min_max_scale_data(self):
+    def min_max_scale_data(self, columns: List[str]):
         """
         Scales the training, validation, and test DataFrames using min-max scaling with the minimum and maximum values of the training data.
         
         The minimum and maximum values are calculated from the training data and then applied to the validation and test data to scale them.
         The minimum and maximum values are also saved as CSV files in the 'stats' directory within the output directory.
         """
-        self._train_df, (train_min, train_max) = DataWrapper.min_max_scale(self._train_df)
-        self._valid_df, _ = DataWrapper.min_max_scale(self._valid_df, train_min, train_max)
-        self._test_df, _ = DataWrapper.min_max_scale(self._test_df, train_min, train_max)
+        self._train_df[columns], (train_min, train_max) = DataWrapper.min_max_scale(self._train_df[columns])
+        self._valid_df[columns], _ = DataWrapper.min_max_scale(self._valid_df[columns], train_min, train_max)
+        self._test_df[columns], _ = DataWrapper.min_max_scale(self._test_df[columns], train_min, train_max)
 
         train_min.to_csv(os.path.join(self.output_dir, 'stats', 'min.csv'))
         train_max.to_csv(os.path.join(self.output_dir, 'stats', 'max.csv'))
 
-    def scale_quantiles_data(self):
+    def scale_quantiles_data(self, columns: List[str]):
         """
         Scales the training, validation, and test DataFrames using the median and interquartile range (IQR) of the training data.
         
         The median, 25th percentile (q25), and 75th percentile (q75) values are calculated from the training data and then applied to the validation and test data to scale them.
         The median, q25, and q75 values are also saved as CSV files in the 'stats' directory within the output directory.
         """
-        self._train_df, (train_median, train_q25, train_q75) = DataWrapper.scale_quantiles(self._train_df)
-        self._valid_df, _ = DataWrapper.scale_quantiles(self._valid_df, train_median, train_q25, train_q75)
-        self._test_df, _ = DataWrapper.scale_quantiles(self._test_df, train_median, train_q25, train_q75)
+        self._train_df[columns], (train_median, train_q25, train_q75) = DataWrapper.scale_quantiles(self._train_df[columns])
+        self._valid_df[columns], _ = DataWrapper.scale_quantiles(self._valid_df[columns], train_median, train_q25, train_q75)
+        self._test_df[columns], _ = DataWrapper.scale_quantiles(self._test_df[columns], train_median, train_q25, train_q75)
 
         train_median.to_csv(os.path.join(self.output_dir, 'stats', 'median.csv'))
         train_q25.to_csv(os.path.join(self.output_dir, 'stats', 'q25.csv'))
@@ -327,7 +327,7 @@ class DataWrapper:
         """
         if isinstance(col_name, str):
             col_name = [col_name]
-        self._df = pd.get_dummies(self._df, columns=col_name)
+        self._df = pd.get_dummies(self._df, columns=col_name, drop_first=True, dtype=float)
         
     def label_encoding(self, col_name: str):
         """
@@ -349,6 +349,28 @@ class DataWrapper:
             List[str]: List of numeric column names.
         """
         return self._df.select_dtypes(include=['number']).columns.tolist()
+
+    def get_categorical_columns(self) -> List[str]:
+        """
+        Identifies and returns a list of column names that are categorical.
+
+        Returns:
+            List[str]: List of categorical column names.
+        """
+        return self._df.select_dtypes(include=['object', 'category']).columns.tolist()
+    
+    def get_other_columns(self) -> List[str]:
+        """
+        Identifies and returns a list of column names that are neither categorical nor numeric.
+
+        Returns:
+            List[str]: List of other column names.
+        """
+        categorical_cols = self.get_categorical_columns()
+        numeric_cols = self.get_numeric_columns()
+        all_cols = set(self._df.columns)
+        other_cols = all_cols - set(categorical_cols) - set(numeric_cols)
+        return list(other_cols)
 
     def get_continuous_numeric_columns(self) -> List[str]:
         """
@@ -384,3 +406,36 @@ class DataWrapper:
         numeric_cols = self.get_numeric_columns()
         cols = [col for col in numeric_cols if self._df[col].nunique() <= k]
         return cols
+
+    def describe(self, column: str) -> pd.Series:
+        """
+        Returns the detailed describtion of the specified column in the self._df
+
+        Args:
+            column (str): column name
+
+        Returns:
+            pd.Series: description of column
+        """
+        return self._df[column].describe()
+
+    def value_counts(self, column: str) -> pd.Series:
+        """
+        Returns the Series where the key is the unique value within the column and the value is its count
+
+        Args:
+            column (str): column name
+
+        Returns:
+            pd.Series: counter of unique values
+        """
+        return self._df[column].value_counts()
+
+    def get_nan_containing_columns(self) -> List[str]:
+        """
+        Returns list of column names where is at least one NaN value
+
+        Returns:
+            List[str]: List of columns
+        """
+        return self._df.columns[self._df.isna().any()].tolist()
