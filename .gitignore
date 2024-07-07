@@ -5,3 +5,5 @@ dataset/
 *.xlsx
 .DS_Store
 *.pyc
+.conda
+__pycache__

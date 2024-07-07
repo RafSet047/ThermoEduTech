@@ -4,6 +4,7 @@ from typing import *
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import LabelEncoder
+from scipy.stats import pointbiserialr
 
 class DataWrapper:
     """
@@ -38,9 +39,16 @@ class DataWrapper:
             self.output_dir = os.path.join(os.getcwd(), 'dataset', 'processed')
         os.system(f"mkdir -p {os.path.join(self.output_dir, 'stats')}")
 
+        self.__preprocess_columns()
+
     @property
     def df(self):
         return self._df
+
+    def __preprocess_columns(self):
+        cols = self._df.columns
+        cols = [col.replace(" ", "_").lower() for col in cols]
+        self._df.columns = cols
     
     @staticmethod
     def calculate_ma(x: pd.Series, period: int) -> pd.Series:
@@ -192,6 +200,16 @@ class DataWrapper:
         train_q25.to_csv(os.path.join(self.output_dir, 'stats', 'q25.csv'))
         train_q75.to_csv(os.path.join(self.output_dir, 'stats', 'q75.csv'))
 
+    def remove_outliers(self, column: str):
+        Q1 = self._df[column].quantile(0.25)
+        Q3 = self._df[column].quantile(0.75)
+        IQR = Q3 - Q1
+
+        lower_bound = Q1 - 1.5 * IQR
+        upper_bound = Q3 + 1.5 * IQR
+
+        self._df = self._df[(self._df[column] >= lower_bound) & (self._df[column] <= upper_bound)]
+
     @staticmethod
     def get_windowed_data(x: Union[np.array, list, pd.Series], window_size: int, horizon: int) -> pd.DataFrame:
         """
@@ -313,6 +331,8 @@ class DataWrapper:
             self._df[col_name].fillna(self._df[col_name].dropna().mean(), inplace=True)
         elif "median" == method:
             self._df[col_name].fillna(self._df[col_name].dropna().median(), inplace=True)
+        elif "most_freq" == method:
+            self._df[col_name].fillna(self._df[col_name].dropna().mode().values[0], inplace=True)
         else:
             NotImplementedError(f"Not implemented inputation type: {method}")
 
@@ -380,7 +400,7 @@ class DataWrapper:
             List[str]: List of continuous numeric column names.
         """
         numeric_cols = self.get_numeric_columns()
-        continuous_cols = [col for col in numeric_cols if self._df[col].nunique() > 2]
+        continuous_cols = [col for col in numeric_cols if self._df[col].nunique() > 10]
         return continuous_cols
 
     def get_binary_numeric_columns(self) -> List[str]:
@@ -439,3 +459,13 @@ class DataWrapper:
             List[str]: List of columns
         """
         return self._df.columns[self._df.isna().any()].tolist()
+
+    def cont_corr(self, columns: List[str] = []) -> pd.Series:
+        return self._df[columns].corr()
+    
+    def binary_corr(self, column_x: str, column_y: str) -> float:
+        corr, _ = pointbiserialr(x=self._df[column_x], y=self._df[column_y])
+        return corr
+
+if __name__ == "__main__":
+    print("ok")

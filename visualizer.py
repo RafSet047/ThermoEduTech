@@ -70,7 +70,7 @@ class Visualizer:
         self._prettify_plot(f'Histogram of {column}', column, 'Frequency')
         plt.show()
     
-    def scatterplot(self, x, y, **kwargs):
+    def scatterplot(self, x, y, sample_size=1., **kwargs):
         """
         Create a scatter plot.
         
@@ -80,7 +80,7 @@ class Visualizer:
         kwargs: Additional keyword arguments to pass to seaborn.scatterplot.
         """
         plt.figure(figsize=self._figsize)
-        sns.scatterplot(data=self._df, x=x, y=y, **kwargs)
+        sns.scatterplot(data=self._df.sample(frac=sample_size), x=x, y=y, **kwargs)
         self._prettify_plot(f'Scatter Plot of {y} vs {x}', x, y)
         plt.show()
     
@@ -126,15 +126,26 @@ class Visualizer:
         self._prettify_plot(f'Swarm Plot of {y} by {x}', x, y)
         plt.show()
     
-    def heatmap(self, columns: Optional[List[str]] = None, **kwargs):
+    def heatmap(self, columns: Optional[List[str]] = None, show_target_only: bool = False, **kwargs):
         """
         Create a heatmap of the correlation matrix.
         Args:
         columns (list[str]|None): list of specified columns in order to calculate the correlation, if None will be done on all columns
+        show_target_only (bool): whether to show only the target column's row as heatmap (NOTE target column is the last from `columns`)
         kwargs: Additional keyword arguments to pass to seaborn.swarmplot.
         
         """
         plt.figure(figsize=self._figsize)
-        sns.heatmap(self._df.corr(), annot=True, cmap='coolwarm', **kwargs)
+        data = None
+        if columns is None:
+            columns = list(self._df.columns)
+            data = self._df.corr()
+        else:
+            data = self._df[columns].corr()
+
+        if show_target_only:
+            data = data[[columns[-1]]]
+
+        sns.heatmap(data, annot=True, vmin=-1., vmax=1., cmap='coolwarm', **kwargs)
         self._prettify_plot('Correlation Heatmap', '', '')
         plt.show()
