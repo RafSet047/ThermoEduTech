@@ -4,7 +4,7 @@ import pandas as pd
 from typing import *
 
 import torch
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import Dataset
 
 class TransformerTabData(Dataset):
     def __init__(self, data_path: str, data_configs_path: str, device: str = 'cpu') -> None:
@@ -12,6 +12,9 @@ class TransformerTabData(Dataset):
         self._df = None
         self._configs = None
         self.__device = device
+
+        self.__num_categories: Optional[Tuple[int]] = None
+        self.__num_continious: Optional[int] = None
 
         self.__load_data(data_path)
         self.__load_configs(data_configs_path)
@@ -26,6 +29,14 @@ class TransformerTabData(Dataset):
     def configs(self) -> Optional[pd.DataFrame]:
         return self._configs.copy()
 
+    @property
+    def num_categories(self) -> Optional[Tuple[int]]:
+        return self.__num_categories
+
+    @property
+    def num_continious(self) -> Optional[int]:
+        return self.__num_continious
+
     def __load_data(self, data_path: str) -> None:
         self._df = pd.read_csv(data_path)
 
@@ -36,12 +47,20 @@ class TransformerTabData(Dataset):
     
     def __parse_configs(self) -> None:
         self.__numerical_features: List[str] = self._configs['num_feats']
+        self.__num_continious = len(self.__numerical_features)
         self.__categorical_features: List[str] = self._configs['cat_feats']
+        self.__num_categories = []
+        self.__cat_features = []
+        for cat_feat in self.__categorical_features:
+            self.__num_categories.append(cat_feat['num_uniques'])
+            self.__cat_features.append(cat_feat['column_name'])
+
+        self.__num_categories = cast(tuple, self.__num_categories)
         self.__target_feature: List[str] = self._configs['target_feature']
 
     def __prepare_features(self) -> None:
         self.__X_num = torch.as_tensor(self._df[self.__numerical_features].values, dtype=torch.float32, device=self.__device)
-        self.__X_cat = torch.as_tensor(self._df[self.__categorical_features].values, dtype=torch.float32, device=self.__device)
+        self.__X_cat = torch.as_tensor(self._df[self.__cat_features].values, dtype=torch.int32, device=self.__device)
         self.__Y = torch.as_tensor(self._df[self.__target_feature].values, dtype=torch.float32, device=self.__device)
 
     def __len__(self) -> int:
