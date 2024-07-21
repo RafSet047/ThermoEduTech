@@ -37,8 +37,7 @@ class DataWrapper:
 
         if self.output_dir is None:
             self.output_dir = os.path.join(os.getcwd(), 'dataset', 'processed')
-        os.system(f"mkdir {os.path.join(self.output_dir, 'stats')}")
-
+        os.makedirs(self.output_dir, exist_ok=True)
         self.__preprocess_columns()
 
     @property
@@ -168,8 +167,8 @@ class DataWrapper:
         self._valid_df[columns], _ = DataWrapper.standardize(self._valid_df[columns], train_mean, train_std)
         self._test_df[columns], _ = DataWrapper.standardize(self._test_df[columns], train_mean, train_std)
 
-        train_mean.to_csv(os.path.join(self.output_dir, 'stats', 'mean.csv'))
-        train_std.to_csv(os.path.join(self.output_dir, 'stats', 'std.csv'))
+        #train_mean.to_csv(os.path.join(self.output_dir, 'stats', 'mean.csv'))
+        #train_std.to_csv(os.path.join(self.output_dir, 'stats', 'std.csv'))
 
     def min_max_scale_data(self, columns: List[str]):
         """
@@ -182,8 +181,8 @@ class DataWrapper:
         self._valid_df[columns], _ = DataWrapper.min_max_scale(self._valid_df[columns], train_min, train_max)
         self._test_df[columns], _ = DataWrapper.min_max_scale(self._test_df[columns], train_min, train_max)
 
-        train_min.to_csv(os.path.join(self.output_dir, 'stats', 'min.csv'))
-        train_max.to_csv(os.path.join(self.output_dir, 'stats', 'max.csv'))
+        #train_min.to_csv(os.path.join(self.output_dir, 'stats', 'min.csv'))
+        #train_max.to_csv(os.path.join(self.output_dir, 'stats', 'max.csv'))
 
     def scale_quantiles_data(self, columns: List[str]):
         """
@@ -196,9 +195,9 @@ class DataWrapper:
         self._valid_df[columns], _ = DataWrapper.scale_quantiles(self._valid_df[columns], train_median, train_q25, train_q75)
         self._test_df[columns], _ = DataWrapper.scale_quantiles(self._test_df[columns], train_median, train_q25, train_q75)
 
-        train_median.to_csv(os.path.join(self.output_dir, 'stats', 'median.csv'))
-        train_q25.to_csv(os.path.join(self.output_dir, 'stats', 'q25.csv'))
-        train_q75.to_csv(os.path.join(self.output_dir, 'stats', 'q75.csv'))
+        #train_median.to_csv(os.path.join(self.output_dir, 'stats', 'median.csv'))
+        #train_q25.to_csv(os.path.join(self.output_dir, 'stats', 'q25.csv'))
+        #train_q75.to_csv(os.path.join(self.output_dir, 'stats', 'q75.csv'))
 
     def remove_outliers(self, column: str):
         Q1 = self._df[column].quantile(0.25)

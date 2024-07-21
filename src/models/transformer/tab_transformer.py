@@ -4,8 +4,12 @@
 import torch
 import torch.nn.functional as F
 from torch import nn, einsum
+from typing import Dict, Optional
 
 from einops import rearrange, repeat
+
+from src.models.model import BaseModel
+from src.shared_state import SharedState
 
 # helpers
 
@@ -145,34 +149,37 @@ class MLP(nn.Module):
 
 # main class
 
-class TabTransformer(nn.Module):
+class TabTransformer(BaseModel):
     def __init__(
         self,
-        *,
-        categories,
-        num_continuous,
-        dim,
-        depth,
-        heads,
-        dim_head = 16,
-        dim_out = 1,
-        mlp_hidden_mults = (4, 2),
-        mlp_act = None,
-        num_special_tokens = 2,
-        continuous_mean_std = None,
-        attn_dropout = 0.,
-        ff_dropout = 0.,
-        use_shared_categ_embed = True,
-        shared_categ_dim_divisor = 8.   # in paper, they reserve dimension / 8 for category shared embedding
+        configs_path: str,
+        state: Optional[SharedState] = None,
+        device: str = 'cpu'
     ):
-        super().__init__()
+        super().__init__(configs_path, staticmethod, device)
+        categories = state.num_categories
+        num_continuous = state.num_continious
         assert all(map(lambda n: n > 0, categories)), 'number of each category must be positive'
         assert len(categories) + num_continuous > 0, 'input shape must not be null'
 
-        # categories related calculations
+        dim = self._configs.get("dim", 32)
+        depth = self._configs.get("depth", 6)
+        heads = self._configs.get("heads", 8)
+        dim_head = self._configs.get("dim_head", 16)
+        dim_out = self._configs.get("dim_out", 1)
+        mlp_hidden_mults = self._configs.get("mlp_hidden_mults", (4, 2))
+        mlp_act = self._configs.get("mlp_act", nn.ReLU())
+        num_special_tokens = self._configs.get("num_special_tokens", 2)
+        continuous_mean_std = None,
+        attn_dropout = self._configs.get("attn_dropout", 0.)
+        ff_dropout = self._configs.get("ff_dropout", 0.)
+        use_shared_categ_embed = True,
+        shared_categ_dim_divisor = 8.   # in paper, they reserve dimension / 8 for category shared embedding
 
+        # categories related calculations
         self.num_categories = len(categories)
         self.num_unique_categories = sum(categories)
+        self.device = device
 
         # create category embeddings table
 
@@ -229,9 +236,10 @@ class TabTransformer(nn.Module):
 
         self.mlp = MLP(all_dimensions, act = mlp_act)
 
-    def forward(self, x_categ, x_cont, return_attn = False):
+    def forward(self, x, return_attn = False):
+        # TODO : Test forward both in cpu and cuda
         xs = []
-
+        x_numer, x_categ = x
         assert x_categ.shape[-1] == self.num_categories, f'you must pass in {self.num_categories} values for your categories input'
 
         if self.num_unique_categories > 0:

@@ -5,6 +5,9 @@
 import torch
 import torch.nn.functional as F
 from torch import nn, einsum
+from typing import Dict, Optional
+from src.models.model import BaseModel
+from src.shared_state import SharedState
 
 from einops import rearrange, repeat
 
@@ -86,6 +89,7 @@ class Transformer(nn.Module):
                 Attention(dim, heads = heads, dim_head = dim_head, dropout = attn_dropout, device=device),
                 FeedForward(dim, dropout = ff_dropout, device=device),
             ]))
+        self.device = device
 
     def forward(self, x, return_attn = False):
         post_softmax_attns = []
@@ -100,7 +104,7 @@ class Transformer(nn.Module):
         if not return_attn:
             return x
 
-        return x, torch.stack(post_softmax_attns).to("cuda")
+        return x, torch.stack(post_softmax_attns).to(self.device)
 
 # numerical embedder
 
@@ -116,25 +120,27 @@ class NumericalEmbedder(nn.Module):
 
 # main class
 
-class FTTransformer(nn.Module):
+class FTTransformer(BaseModel):
     def __init__(
         self,
-        *,
-        categories,
-        num_continuous,
-        dim,
-        depth,
-        heads,
-        dim_head = 16,
-        dim_out = 1,
-        num_special_tokens = 2,
-        attn_dropout = 0.,
-        ff_dropout = 0.,
-        device
+        configs_path: str,
+        state: Optional[SharedState] = None,
+        device: str = 'cpu'
     ):
-        super().__init__()
+        super().__init__(configs_path, state, device)
+        categories = state.num_categories
+        num_continuous = state.num_continious
         assert all(map(lambda n: n > 0, categories)), 'number of each category must be positive'
         assert len(categories) + num_continuous > 0, 'input shape must not be null'
+
+        dim = self._configs.get("dim", 32)
+        depth = self._configs.get("depth", 6)
+        heads = self._configs.get("heads", 8)
+        dim_head = self._configs.get("dim_head", 16)
+        dim_out = self._configs.get("dim_out", 1)
+        num_special_tokens = self._configs.get("num_special_tokens", 2)
+        attn_dropout = self._configs.get("attn_dropout", 0.)
+        ff_dropout = self._configs.get("ff_dropout", 0.)
 
         # categories related calculations
         self.device = device
@@ -188,7 +194,8 @@ class FTTransformer(nn.Module):
             nn.Linear(dim, dim_out, device=device)
         )
 
-    def forward(self, x_categ, x_numer, return_attn = False):
+    def forward(self, x, return_attn = False):
+        x_numer, x_categ = x
         assert x_categ.shape[-1] == self.num_categories, f'you must pass in {self.num_categories} values for your categories input'
 
         xs = []
