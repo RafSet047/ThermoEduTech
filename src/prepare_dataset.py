@@ -21,7 +21,7 @@ def prepare_data(data_path: str, output_dirpath: str):
     df.df['Hour'] = df.df['DateTime'].dt.hour
     df.df['Minute'] = df.df['DateTime'].dt.minute
 
-    # Drop original 'Date' and 'Time' columns
+    # Drop columns
     df.df.drop(['date', 'time', 'DateTime','classroom_category','device_code','measured_rh','measured_co2', 'measured_pm1.0', 'measured_pm2.5', 'measured_pm10','grade','room_no','battv_min', 'batt24v_min','school_no','tracker2wm_avg'], axis=1, inplace=True)
 
     configs['cat_feats'] = []
@@ -39,10 +39,13 @@ def prepare_data(data_path: str, output_dirpath: str):
 
     cont_feats = df.get_continuous_numeric_columns()
     cont_feats = list(set(cont_feats) - set(['device_code', TARGET_COLUMN]) - set(cat_feats))
+
+    # Adding the target column to the list of continuous features for scaling later on
+    cont_feats.append(TARGET_COLUMN)
     
     # no normalizing of preprocessing of the continious
     configs["num_feats"] = cont_feats
-
+    
     for col in df.get_nan_containing_columns():
         method = None
         if col in cont_feats:
@@ -56,6 +59,9 @@ def prepare_data(data_path: str, output_dirpath: str):
 
     df.slice_sequential(train_prop=TRAIN_SIZE, valid_prop=VALID_SIZE)
 
+    # Apply min-max scaling to the numerical features
+    df.min_max_scale_data(cont_feats)
+    
     df.save_train_df()
     df.save_valid_df()
     df.save_test_df()
