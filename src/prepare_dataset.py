@@ -1,6 +1,7 @@
 import os
 import sys
 from utils import DataWrapper, write_config
+import pandas as pd
 
 TRAIN_SIZE = 0.7
 VALID_SIZE = 0.1
@@ -11,9 +12,21 @@ def prepare_data(data_path: str, output_dirpath: str):
     configs = {}
     df = DataWrapper(data_path, output_dirpath)
 
+    # Convert 'Date' and 'Time' columns to datetime
+    df.df['DateTime'] = pd.to_datetime(df.df['date'] + ' ' + df.df['time'], format='%d/%m/%Y %H:%M:%S')
+
+    # Extract date and time features
+    df.df['Month'] = df.df['DateTime'].dt.month
+    df.df['Day'] = df.df['DateTime'].dt.day
+    df.df['Hour'] = df.df['DateTime'].dt.hour
+    df.df['Minute'] = df.df['DateTime'].dt.minute
+
+    # Drop original 'Date' and 'Time' columns
+    df.df.drop(['date', 'time', 'DateTime','classroom_category','device_code','measured_rh','measured_co2', 'measured_pm1.0', 'measured_pm2.5', 'measured_pm10','grade','room_no','battv_min', 'batt24v_min','school_no','tracker2wm_avg'], axis=1, inplace=True)
+
     configs['cat_feats'] = []
     cat_feats = df.get_categorical_columns()
-    cat_feats = list(set(cat_feats) - set(["date", "time", "tmstamp"]))
+    cat_feats = list(set(cat_feats) - set(["tmstamp"]))
     for cat_feat in cat_feats:
         df.label_encoding(cat_feat)
         #print(f"Column: {cat_feat}, Uniques: {df.df[cat_feat].nunique()}")
@@ -23,10 +36,6 @@ def prepare_data(data_path: str, output_dirpath: str):
                 "num_uniques": int(df.df[cat_feat].nunique())
             }
         )
-
-    # garbage column
-    if 'tracker2wm_avg' in df.df.columns:
-        df.df.drop(columns=['tracker2wm_avg'], inplace=True)
 
     cont_feats = df.get_continuous_numeric_columns()
     cont_feats = list(set(cont_feats) - set(['device_code', TARGET_COLUMN]) - set(cat_feats))
