@@ -1,5 +1,5 @@
 model:
-  type: FTTransformer
+  type: TabTransformer
   args:
     configs_path: "src/models/transformer/configs.yaml"
     device: 'cpu'
@@ -7,32 +7,31 @@ model:
 train:
   type: ThermoTransformerDataset
   args:
-    data_path: 'tmp/train.csv'
-    configs_path: 'tmp/configs.yaml'
+    data_path: 'dataset/train.csv'
+    configs_path: 'dataset/configs.yaml'
     device: 'cpu'
 
 valid:
   type: ThermoTransformerDataset
   args:
-    data_path: 'tmp/valid.csv'
-    configs_path: 'tmp/configs.yaml'
+    data_path: 'dataset/valid.csv'
+    configs_path: 'dataset/configs.yaml'
     device: 'cpu'
 
 optimizer:
   type: Adam
   args:
-    lr: 0.001
+    lr: 0.0001
 
 criterion:
   type: MSELoss
   args: {}
 
 schedulers:
-  type: StepLR
-  args:
-    step_size: 10
-    gamma: 0.1
+  type: ReduceLROnPlateau
+  args: {}
 
 device: cpu
-num_epochs: 1
-batch_size: 16
+num_epochs: 2
+batch_size: 256
+model_path: "ft_transformer.pt"

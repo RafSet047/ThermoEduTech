@@ -156,7 +156,7 @@ class TabTransformer(BaseModel):
         state: Optional[SharedState] = None,
         device: str = 'cpu'
     ):
-        super().__init__(configs_path, staticmethod, device)
+        super().__init__(configs_path, state, device)
         categories = state.num_categories
         num_continuous = state.num_continious
         assert all(map(lambda n: n > 0, categories)), 'number of each category must be positive'
@@ -170,7 +170,7 @@ class TabTransformer(BaseModel):
         mlp_hidden_mults = self._configs.get("mlp_hidden_mults", (4, 2))
         mlp_act = self._configs.get("mlp_act", nn.ReLU())
         num_special_tokens = self._configs.get("num_special_tokens", 2)
-        continuous_mean_std = None,
+        continuous_mean_std = None
         attn_dropout = self._configs.get("attn_dropout", 0.)
         ff_dropout = self._configs.get("ff_dropout", 0.)
         use_shared_categ_embed = True,
@@ -239,7 +239,7 @@ class TabTransformer(BaseModel):
     def forward(self, x, return_attn = False):
         # TODO : Test forward both in cpu and cuda
         xs = []
-        x_numer, x_categ = x
+        x_cont, x_categ = x
         assert x_categ.shape[-1] == self.num_categories, f'you must pass in {self.num_categories} values for your categories input'
 
         if self.num_unique_categories > 0:
@@ -273,3 +273,6 @@ class TabTransformer(BaseModel):
             return logits
 
         return logits, attns
+
+if __name__ == "__main__":
+    model = TabTransformer()

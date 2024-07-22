@@ -1,7 +1,9 @@
 import os
 import sys
+from copy import deepcopy
 from utils import DataWrapper, write_config
 import pandas as pd
+
 
 TRAIN_SIZE = 0.7
 VALID_SIZE = 0.1
@@ -39,17 +41,17 @@ def prepare_data(data_path: str, output_dirpath: str):
 
     cont_feats = df.get_continuous_numeric_columns()
     cont_feats = list(set(cont_feats) - set(['device_code', TARGET_COLUMN]) - set(cat_feats))
+    
+    # no normalizing of preprocessing of the continious
+    configs["num_feats"] = deepcopy(cont_feats)
 
     # Adding the target column to the list of continuous features for scaling later on
     cont_feats.append(TARGET_COLUMN)
     
-    # no normalizing of preprocessing of the continious
-    configs["num_feats"] = cont_feats
-    
     for col in df.get_nan_containing_columns():
         method = None
         if col in cont_feats:
-            method = 'mean'
+            method = 'inter'
         elif col in cat_feats:
             method = "most_freq"
         else:

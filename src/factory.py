@@ -52,7 +52,7 @@ class Factory:
         return self._configs.get("device", 'cpu')
 
     def get_epochs(self) -> int:
-        return self._configs.get("epochs", 10)
+        return self._configs.get("num_epochs", 3)
 
     def get_model_path(self) -> str:
         return self._configs.get("model_path", "model.pt")

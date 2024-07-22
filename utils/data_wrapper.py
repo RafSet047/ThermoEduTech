@@ -3,7 +3,8 @@ import sys
 from typing import *
 import pandas as pd
 import numpy as np
-from sklearn.preprocessing import LabelEncoder
+import joblib
+from sklearn.preprocessing import LabelEncoder, StandardScaler, MinMaxScaler
 from scipy.stats import pointbiserialr
 
 class DataWrapper:
@@ -38,6 +39,8 @@ class DataWrapper:
         if self.output_dir is None:
             self.output_dir = os.path.join(os.getcwd(), 'dataset', 'processed')
         os.makedirs(self.output_dir, exist_ok=True)
+        os.makedirs(os.path.join(self.output_dir, 'assets'), exist_ok=True)
+        os.makedirs(os.path.join(self.output_dir, 'assets', 'labels'), exist_ok=True)
         self.__preprocess_columns()
 
     @property
@@ -78,64 +81,40 @@ class DataWrapper:
         return x.ewm(span=period, adjust=True).mean()
 
     @staticmethod
-    def standardize(x: Union[np.array, pd.Series], mean: Optional[float] = None, std: Optional[float] = None) -> Tuple[Union[np.array, pd.Series], Tuple[float, float]]:
+    def standardize(x: Union[np.array, pd.Series], scaler: Optional[StandardScaler] = None) -> Tuple[Union[np.array, pd.Series], StandardScaler]:
         """
         Standardizes the input data by removing the mean and scaling to unit variance.
 
         Args:
             x (Union[np.array, pd.Series]): The input data series or array.
-            mean (Optional[float]): The mean value for standardization. If None, it is calculated from the data.
-            std (Optional[float]): The standard deviation for standardization. If None, it is calculated from the data.
+            scaler (StandardScaler): The standard scaler for standardization. If None, it is calculated from the data.
 
         Returns:
-            Tuple[Union[np.array, pd.Series], Tuple[float, float]]: A tuple containing the standardized data and a tuple of the mean and standard deviation used.
+            Tuple[Union[np.array, pd.Series], scaler]: A tuple containing the standardized data and a scaler.
         """
-        if mean is None:
-            mean = x.mean()
-        if std is None:
-            std = x.std()
-        return (x - mean) / (std + 1e-6), (mean, std)
+        if scaler is None:
+            scaler = StandardScaler()
+            x_scaled = scaler.fit_transform(x)
+            return x_scaled, scaler
+        return scaler.transform(x), scaler
     
     @staticmethod
-    def min_max_scale(x: Union[np.array, pd.Series], min_: Optional[float] = None, max_: Optional[float] = None) -> Tuple[Union[np.array, pd.Series], Tuple[float, float]]:
+    def min_max_scale(x: Union[np.array, pd.Series], scaler: Optional[MinMaxScaler] = None) -> Tuple[Union[np.array, pd.Series], MinMaxScaler]:
         """
         Scales the input data to a given range [0, 1] using min-max scaling.
 
         Args:
             x (Union[np.array, pd.Series]): The input data series or array.
-            min_ (Optional[float]): The minimum value for scaling. If None, it is calculated from the data.
-            max_ (Optional[float]): The maximum value for scaling. If None, it is calculated from the data.
+            scaler (Optional[MinMaxScaler]): The min max scaler. If None, it is calculated from the data.
 
         Returns:
-            Tuple[Union[np.array, pd.Series], Tuple[float, float]]: A tuple containing the scaled data and a tuple of the minimum and maximum values used.
+            Tuple[Union[np.array, pd.Series], MinMaxScaler]: A tuple containing the scaled data and a scaler.
         """
-        if min_ is None:
-            min_ = x.min()
-        if max_ is None:
-            max_ = x.max()
-        return (x - min_) / (max_ - min_ + 1e-6), (min_, max_)
-
-    @staticmethod
-    def scale_quantiles(x: Union[np.array, pd.Series], median: Optional[float] = None, q25: Optional[float] = None, q75: Optional[float] = None) -> Tuple[Union[np.array, pd.Series], Tuple[float, float]]:
-        """
-        Scales the input data using the median and interquartile range (IQR).
-
-        Args:
-            x (Union[np.array, pd.Series]): The input data series or array.
-            median (Optional[float]): The median value for scaling. If None, it is calculated from the data.
-            q25 (Optional[float]): The 25th percentile (first quartile) value for scaling. If None, it is calculated from the data.
-            q75 (Optional[float]): The 75th percentile (third quartile) value for scaling. If None, it is calculated from the data.
-
-        Returns:
-            Tuple[Union[np.array, pd.Series], Tuple[float, float]]: A tuple containing the scaled data and a tuple of the median, 25th percentile, and 75th percentile values used.
-        """
-        if median is None:
-            median = np.median(x)
-        if q25 is None: 
-            q25 = np.quantile(x, 25)
-        if q75 is None:
-            q75 = np.quantile(x, 75)
-        return (x - median) / (q75 - q25), (median, q25, q75)
+        if scaler is None:
+            scaler = MinMaxScaler()
+            x_scaled = scaler.fit_transform(x)
+            return x_scaled, scaler
+        return scaler.transform(x), scaler
 
     def slice_sequential(self, train_prop: float = 0.7, valid_prop: float = 0.1):
         """
@@ -161,43 +140,26 @@ class DataWrapper:
         Standardizes the training, validation, and test DataFrames using the mean and standard deviation of the training data.
         
         The mean and standard deviation are calculated from the training data and then applied to the validation and test data to standardize them.
-        The mean and standard deviation are also saved as CSV files in the 'stats' directory within the output directory.
+        The scaler is also saved as binary file in the 'assets' directory within the output directory.
         """
-        self._train_df[columns], (train_mean, train_std) = DataWrapper.standardize(self._train_df[columns])
-        self._valid_df[columns], _ = DataWrapper.standardize(self._valid_df[columns], train_mean, train_std)
-        self._test_df[columns], _ = DataWrapper.standardize(self._test_df[columns], train_mean, train_std)
+        self._train_df[columns], scaler = DataWrapper.standardize(self._train_df[columns])
+        self._valid_df[columns], _ = DataWrapper.standardize(self._valid_df[columns], scaler)
+        self._test_df[columns], _ = DataWrapper.standardize(self._test_df[columns], scaler)
 
-        #train_mean.to_csv(os.path.join(self.output_dir, 'stats', 'mean.csv'))
-        #train_std.to_csv(os.path.join(self.output_dir, 'stats', 'std.csv'))
+        joblib.dump(scaler, os.path.join(self.output_dir, 'assets', 'standard_scaler.joblib'))
 
     def min_max_scale_data(self, columns: List[str]):
         """
         Scales the training, validation, and test DataFrames using min-max scaling with the minimum and maximum values of the training data.
         
         The minimum and maximum values are calculated from the training data and then applied to the validation and test data to scale them.
-        The minimum and maximum values are also saved as CSV files in the 'stats' directory within the output directory.
+        The scaler is also saved as CSV files in the 'stats' directory within the output directory.
         """
-        self._train_df[columns], (train_min, train_max) = DataWrapper.min_max_scale(self._train_df[columns])
-        self._valid_df[columns], _ = DataWrapper.min_max_scale(self._valid_df[columns], train_min, train_max)
-        self._test_df[columns], _ = DataWrapper.min_max_scale(self._test_df[columns], train_min, train_max)
+        self._train_df[columns], scaler = DataWrapper.min_max_scale(self._train_df[columns])
+        self._valid_df[columns], _ = DataWrapper.min_max_scale(self._valid_df[columns], scaler)
+        self._test_df[columns], _ = DataWrapper.min_max_scale(self._test_df[columns], scaler)
 
-        #train_min.to_csv(os.path.join(self.output_dir, 'stats', 'min.csv'))
-        #train_max.to_csv(os.path.join(self.output_dir, 'stats', 'max.csv'))
-
-    def scale_quantiles_data(self, columns: List[str]):
-        """
-        Scales the training, validation, and test DataFrames using the median and interquartile range (IQR) of the training data.
-        
-        The median, 25th percentile (q25), and 75th percentile (q75) values are calculated from the training data and then applied to the validation and test data to scale them.
-        The median, q25, and q75 values are also saved as CSV files in the 'stats' directory within the output directory.
-        """
-        self._train_df[columns], (train_median, train_q25, train_q75) = DataWrapper.scale_quantiles(self._train_df[columns])
-        self._valid_df[columns], _ = DataWrapper.scale_quantiles(self._valid_df[columns], train_median, train_q25, train_q75)
-        self._test_df[columns], _ = DataWrapper.scale_quantiles(self._test_df[columns], train_median, train_q25, train_q75)
-
-        #train_median.to_csv(os.path.join(self.output_dir, 'stats', 'median.csv'))
-        #train_q25.to_csv(os.path.join(self.output_dir, 'stats', 'q25.csv'))
-        #train_q75.to_csv(os.path.join(self.output_dir, 'stats', 'q75.csv'))
+        joblib.dump(scaler, os.path.join(self.output_dir, 'assets', 'min_max_scaler.joblib'))
 
     def remove_outliers(self, column: str):
         Q1 = self._df[column].quantile(0.25)
@@ -332,6 +294,8 @@ class DataWrapper:
             self._df[col_name].fillna(self._df[col_name].dropna().median(), inplace=True)
         elif "most_freq" == method:
             self._df[col_name].fillna(self._df[col_name].dropna().mode().values[0], inplace=True)
+        elif "inter" == method:
+            self._df[col_name].interpolate(method='cubic', inplace=True) 
         else:
             NotImplementedError(f"Not implemented inputation type: {method}")
 
@@ -359,6 +323,8 @@ class DataWrapper:
         """
         le = LabelEncoder()
         self._df[col_name] = le.fit_transform(self._df[col_name])
+
+        joblib.dump(le, os.path.join(self.output_dir, 'assets', 'labels', f"{col_name}.joblib"))
 
     def get_numeric_columns(self) -> List[str]:
         """

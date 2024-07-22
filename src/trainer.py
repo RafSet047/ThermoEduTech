@@ -64,7 +64,7 @@ class ModelTrainer:
                 self._optimizer.step()
 
                 total_loss += loss.item()
-                pbar.set_description(f"Total Loss: {total_loss}")
+                pbar.set_description(f"Loss: {loss}")
         return total_loss, total_loss / len(self._train_loader)
 
     def test_step(self) -> Optional[Tuple[float, float]]:
@@ -105,5 +105,5 @@ class ModelTrainer:
                     self._best_weights = self._model.state_dict()
                 valid_avg_losses.append(avg_val_loss)
             train_avg_losses.append(avg_train_loss) 
-            print(f"Train Loss: {train_loss}, Validation Loss: {val_loss}")
+            print(f"Train Loss: {avg_train_loss}, Validation Loss: {avg_val_loss}")
         return train_avg_losses, valid_avg_losses
