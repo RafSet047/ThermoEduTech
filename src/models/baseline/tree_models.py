@@ -1,10 +1,10 @@
 import xgboost as xgb
-import catboost as cat
+# import catboost as cat
 import lightgbm as lgb
 
 import numpy as np
 
-from basemodel import BaseModel
+from src.models.baseline.basemodel import BaseModel
 
 '''
     Define all Gradient Boosting Decision Tree Models:
@@ -77,7 +77,7 @@ class XGBoost(BaseModel):
     CatBoost (https://catboost.ai/)
 '''
 
-
+'''
 class CatBoost(BaseModel):
 
     def __init__(self, params, args):
@@ -128,7 +128,7 @@ class CatBoost(BaseModel):
             "l2_leaf_reg": trial.suggest_float("l2_leaf_reg", 0.5, 30, log=True),
         }
         return params
-
+'''
 
 '''
     LightGBM (https://lightgbm.readthedocs.io/en/latest/)
