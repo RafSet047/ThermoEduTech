@@ -11,6 +11,8 @@ from einops import rearrange, repeat
 from src.models.model import BaseModel
 from src.shared_state import SharedState
 
+from loguru import logger
+
 # helpers
 
 def exists(val):
@@ -235,6 +237,8 @@ class TabTransformer(BaseModel):
         all_dimensions = [input_size, *hidden_dimensions, dim_out]
 
         self.mlp = MLP(all_dimensions, act = mlp_act)
+
+        logger.info(f"Created the Tab Transformer from {configs_path} configs")
 
     def forward(self, x, return_attn = False):
         # TODO : Test forward both in cpu and cuda

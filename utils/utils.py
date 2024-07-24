@@ -1,3 +1,4 @@
+import json
 import yaml
 from typing import *
 
@@ -9,6 +10,11 @@ def load_config(config_file: str) -> Dict[str, Any]:
 def write_config(config_file: str, data: Dict) -> None:
     with open(config_file, 'w') as file:
         yaml.safe_dump(data, file)
+    file.close()
+
+def write_json(config_file: str, data: Dict) -> None:
+    with open(config_file, 'w') as file:
+        json.dump(data, file)
     file.close()
 
 def get_instance(module, name: str, config: Dict[str, Any], *args, **kwargs):

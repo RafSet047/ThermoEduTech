@@ -86,7 +86,6 @@ class ModelTrainer:
     def train(self, num_epochs: int) -> Tuple[List[float], List[float]]:
 
         best_loss = float('inf')
-        val_loss = float("nan")
         train_avg_losses = []
         valid_avg_losses = []
         for epoch_idx in range(num_epochs):
@@ -94,10 +93,10 @@ class ModelTrainer:
             print("Epoch %d" % (epoch_idx+1))
             print("-----------------------------------")
 
-            train_loss, avg_train_loss = self.train_step()
+            _, avg_train_loss = self.train_step()
             val_result = self.test_step()
             if not val_result is None:
-                val_loss, avg_val_loss = val_result
+                _, avg_val_loss = val_result
                 for scheduler in self._schedulers:
                     scheduler.step(avg_val_loss)
                 if avg_val_loss <= best_loss:

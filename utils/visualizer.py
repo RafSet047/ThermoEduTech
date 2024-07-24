@@ -149,3 +149,35 @@ class Visualizer:
         sns.heatmap(data, annot=True, vmin=-1., vmax=1., cmap='coolwarm', **kwargs)
         self._prettify_plot('Correlation Heatmap', '', '')
         plt.show()
+
+    @staticmethod
+    def plot_train_curves(train_losses: List[float], valid_losses: List[str], save_path: str) -> None:
+        """
+        Plots the training and validation losses over epochs using Seaborn.
+
+        Args:
+            train_losses (list of float): List of training losses for each epoch.
+            val_losses (list of float): List of validation losses for each epoch.
+        """
+        epochs = range(1, len(train_losses) + 1)
+        data = pd.DataFrame({
+            'epoch': epochs,
+            'train_loss': train_losses,
+            'valid_loss': valid_losses
+        })
+        data = data.melt(id_vars='epoch', var_name='Loss Type', value_name='Loss')
+        
+        plt.figure(figsize=(10, 6))
+        sns.lineplot(data=data, x='epoch', y='Loss', hue='Loss Type', marker='o')
+        
+        plt.title('Training and Validation Loss Over Epochs')
+        plt.xlabel('Epochs')
+        plt.ylabel('Loss')
+        plt.grid(True)
+        plt.tight_layout()
+        plt.savefig(save_path)
+
+if __name__ == "__main__":
+    tr = [0.9, 0.87, 0.79, 0.54, 0.36, 0.22]
+    vl = [1.5, 1.17, 0.99, 0.62, 0.75, 0.82]
+    Visualizer.plot_train_curves(tr, vl, 'tmp.png')

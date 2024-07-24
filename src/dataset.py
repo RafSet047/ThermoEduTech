@@ -33,5 +33,9 @@ class ThermoDataset(ABC, Dataset):
         return self._N
 
     @abstractmethod
+    def get_dataset(self) -> Any:
+        pass
+
+    @abstractmethod
     def __getitem__(self, index: int) -> Any:
         pass

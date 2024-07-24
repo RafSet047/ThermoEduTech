@@ -36,6 +36,9 @@ class ThermoTransformerDataset(ThermoDataset):
         self.__X_cat = torch.as_tensor(self._df[self.__cat_features].values, dtype=torch.int32, device=self._device)
         self.__Y = torch.as_tensor(self._df[self.__target_feature].values, dtype=torch.float32, device=self._device)
 
+    def get_dataset(self) -> Any:
+        return (self.__X_num, self.__X_cat), self.__Y
+
     def __getitem__(self, index) -> Tuple[Tuple[torch.Tensor, torch.Tensor], torch.Tensor]:
         return ((self.__X_num[index], self.__X_cat[index]), self.__Y[index])
 

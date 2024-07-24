@@ -11,6 +11,8 @@ from src.shared_state import SharedState
 
 from einops import rearrange, repeat
 
+from loguru import logger
+
 # feedforward and attention
 
 class GEGLU(nn.Module):
@@ -193,6 +195,8 @@ class FTTransformer(BaseModel):
             nn.ReLU(),
             nn.Linear(dim, dim_out, device=device)
         )
+
+        logger.info(f"Created the FT Transformer from {configs_path} configs")
 
     def forward(self, x, return_attn = False):
         x_numer, x_categ = x

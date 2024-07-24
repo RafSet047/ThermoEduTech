@@ -1,5 +1,11 @@
+import os
 import sys
+import json
+import shutil
+import datetime
 from typing import *
+
+from loguru import logger
 
 import torch.optim as optim
 import torch.nn as nn
@@ -11,12 +17,33 @@ from src.models.model import BaseModel
 from src.dataset import ThermoDataset
 from utils import get_instance, load_config
 
-
 class Factory:
     def __init__(self, config_path: str) -> None:
         self._configs = load_config(config_path)
         self._shared_state = SharedState()
 
+        self._output_dirpath = self._configs.get("output_dirpath", "")
+        if '' == self._output_dirpath:
+            logger.error(f"No given or empty `output_dirpath` in configs")
+            raise ValueError("Wrong provided `output_dirpath`")
+            
+        if not os.path.exists('results'):
+            os.makedirs('results')
+
+        logger.info(f"Initialized the Factory from {config_path}")
+        logger.info(json.dumps(self._configs, indent=2))
+
+    def creat_output_dirpath(self, config_path: str):
+        now = datetime.datetime.now()
+        now = now.strftime("%d_%m_%Y_%H_%M_%S")
+        self._output_dirpath = self._output_dirpath.split('/')[-1]
+        self._output_dirpath = "_".join([self._output_dirpath, now])
+        self._output_dirpath = os.path.join('results', self._output_dirpath)
+        os.makedirs(self._output_dirpath, exist_ok=True)
+
+        shutil.copyfile(config_path, os.path.join(self._output_dirpath, 'configs.yaml'))
+        self._configs['output_dirpath'] = self._output_dirpath
+        
     def create_model(self):
         model: BaseModel = get_instance(models, 'model', self._configs, state=self._shared_state)
         self._shared_state = model.get_shared_state()
@@ -55,7 +82,13 @@ class Factory:
         return self._configs.get("num_epochs", 3)
 
     def get_model_path(self) -> str:
-        return self._configs.get("model_path", "model.pt")
+        return os.path.join(self._output_dirpath, 'model.pt')
+    
+    def get_plots_save_path(self) -> str:
+        return self._configs.get("plots_save_path", 'results.png')
+
+    def get_output_dirpath(self) -> str:
+        return self._output_dirpath
 
 if __name__ == "__main__":
     c = sys.argv[1]

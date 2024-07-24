@@ -18,6 +18,13 @@ valid:
     configs_path: 'dataset/configs.yaml'
     device: 'cpu'
 
+test:
+  type: ThermoTransformerDataset
+  args:
+    data_path: 'dataset/valid.csv'
+    configs_path: 'dataset/configs.yaml'
+    device: 'cpu'
+
 optimizer:
   type: Adam
   args:
@@ -32,6 +39,7 @@ schedulers:
   args: {}
 
 device: cpu
-num_epochs: 2
+num_epochs: 10
 batch_size: 256
 model_path: "ft_transformer.pt"
+output_dirpath: 'results/ft_transformer'
