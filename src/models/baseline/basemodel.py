@@ -3,7 +3,7 @@ import typing as tp
 
 import optuna
 
-from io_utils import save_predictions_to_file, save_model_to_file
+from src.models.baseline.io_utils import save_predictions_to_file, save_model_to_file
 
 
 class BaseModel:
