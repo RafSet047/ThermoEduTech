@@ -1,5 +1,5 @@
 import os
-import sys
+import argparse
 from loguru import logger
 from factory import Factory
 from trainer import ModelTrainer
@@ -10,7 +10,7 @@ from utils import Visualizer
 
 def train(config_path: str):
     f = Factory(config_path)
-    f.creat_output_dirpath(config_path)
+    f.create_output_dirpath(config_path)
     
     train_data = f.create_dataset('train')
     train_loader = DataLoader(train_data, batch_size=f.get_batch_size(), shuffle=False)
@@ -42,5 +42,7 @@ def train(config_path: str):
     logger.info(f"Training has finished in the {output_dirpath}")
     
 if __name__ == "__main__":
-    c = sys.argv[1]
-    train(c)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-c", '--config-path', help='Path to config path for training', type=str, required=True)
+    args = parser.parse_args()
+    train(args.config_path)

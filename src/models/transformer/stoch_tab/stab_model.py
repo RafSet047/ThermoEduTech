@@ -211,7 +211,7 @@ class NumericalEmbedder(nn.Module):
         return y
 
 # main class
-class STabModel(BaseModel):
+class STabTransformer(BaseModel):
     def __init__(
         self,
         configs_path: str,
@@ -335,7 +335,7 @@ if __name__ == "__main__":
     st.num_continious = 10
 
     c = sys.argv[1]
-    model = STabModel(c, st)
+    model = STabTransformer(c, st)
 
     pred = model((x_cont, x_categ))
     print(pred)

@@ -1,5 +1,5 @@
 model:
-  type: TabTransformer
+  type: STabTransformer
   args:
     configs_path: "src/models/transformer/configs.yaml"
     device: 'cpu'
@@ -42,4 +42,4 @@ device: cpu
 num_epochs: 10
 batch_size: 256
 model_path: "ft_transformer.pt"
-output_dirpath: 'results/ft_transformer'
+output_dirpath: 'results/stab_transformer'

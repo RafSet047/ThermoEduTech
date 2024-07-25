@@ -18,7 +18,28 @@ def write_json(config_file: str, data: Dict) -> None:
     file.close()
 
 def get_instance(module, name: str, config: Dict[str, Any], *args, **kwargs):
+    """
+    Instantiates an object from a specified module using a configuration dictionary.
+
+    Args:
+        module: The Python module containing the class to instantiate.
+        name (str): The key in the config dictionary that specifies the object type and its initialization arguments.
+        config (Dict[str, Any]): A dictionary containing the object configuration. 
+            The dictionary should have the structure:
+            {
+                'object_name': {
+                    'type': 'ClassName',
+                    'args': {
+                        # Arguments to pass to the class constructor
+                    }
+                }
+            }
+        *args: Additional positional arguments to pass to the class constructor.
+        **kwargs: Additional keyword arguments to pass to the class constructor, overriding those in `config`.
+
+    Returns:
+        An instance of the specified class, initialized with the provided arguments.
+    """
     cls = getattr(module, config[name]['type'])
-    #constructor_params = cls.__init__.__code__.co_varnames
     instance_args = {**config[name]['args'], **kwargs}
     return cls(*args, **instance_args)

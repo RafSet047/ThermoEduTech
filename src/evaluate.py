@@ -1,16 +1,16 @@
 import os
-import sys
 import json
 import torch
+import argparse
 import numpy as np
 from loguru import logger
 from factory import Factory
 from utils import regression_report, write_json
 
-def evaluate(configs_path: str):
+def evaluate(configs_path: str, subset: str = 'train'):
     f = Factory(configs_path)
     
-    dataset = f.create_dataset('test')
+    dataset = f.create_dataset(subset)
     model = f.create_model()
     
     model.load_state_dict(torch.load(f.get_model_path()))
@@ -35,4 +35,8 @@ def evaluate(configs_path: str):
     return
 
 if __name__ == "__main__":
-    evaluate(sys.argv[1])
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-c", '--config-path', help='Path to config path from training results directory for eval', type=str, required=True)
+    parser.add_argument("-s", '--subset', help='Subset of data for evaluation', type=str, required=False, default='test', choices=['train', 'valid', 'test'])
+    args = parser.parse_args()
+    evaluate(args.config_path, args.subset)

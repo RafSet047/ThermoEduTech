@@ -1,4 +1,4 @@
 from .transformer import *
 
 
-__all__ = ["TabTransformer", "FTTransformer", "STabModel"]
+__all__ = ["TabTransformer", "FTTransformer", "STabTransformer"]
