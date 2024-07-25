@@ -26,6 +26,12 @@ def prepare_data(data_path: str, output_dirpath: str):
     # Drop columns
     df.df.drop(['date', 'time', 'DateTime','classroom_category','device_code','measured_rh','measured_co2', 'measured_pm1.0', 'measured_pm2.5', 'measured_pm10','grade','room_no','battv_min', 'batt24v_min','school_no','tracker2wm_avg'], axis=1, inplace=True)
 
+    start_date = '2023-03-16'
+    end_date = '2023-11-07'
+    df.df = df.df[(df.df['tmstamp'] >= start_date) & (df.df['tmstamp'] <= end_date)]
+
+    df.df = df.df.dropna(subset=['Measured T'])
+
     configs['cat_feats'] = []
     cat_feats = df.get_categorical_columns()
     cat_feats = list(set(cat_feats) - set(["tmstamp"]))
@@ -59,10 +65,13 @@ def prepare_data(data_path: str, output_dirpath: str):
             continue
         df.fillna(col, method=method)
 
+    df.df = df.df.sort_values(by='TmStamp')
+    df.df = df.df.reset_index(drop=True)
+    
     df.slice_sequential(train_prop=TRAIN_SIZE, valid_prop=VALID_SIZE)
 
-    # Apply min-max scaling to the numerical features
-    df.min_max_scale_data(cont_feats)
+    # Apply min-max scaling to the numerical features 
+    df.min_max_scale_data(cont_feats) #to avoid data leakage, so its after slice_sequential
     
     df.save_train_df()
     df.save_valid_df()
