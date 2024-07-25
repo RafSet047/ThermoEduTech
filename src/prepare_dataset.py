@@ -1,14 +1,15 @@
 import os
-import sys
+import argparse
+from loguru import logger
 from copy import deepcopy
 from utils import DataWrapper, write_config
 import pandas as pd
-
 
 TRAIN_SIZE = 0.7
 VALID_SIZE = 0.1
 
 TARGET_COLUMN = "measured_t"
+
 
 def prepare_data(data_path: str, output_dirpath: str):
     configs = {}
@@ -24,36 +25,44 @@ def prepare_data(data_path: str, output_dirpath: str):
     df.df['Minute'] = df.df['DateTime'].dt.minute
 
     # Drop columns
-    df.df.drop(['date', 'time', 'DateTime','classroom_category','device_code','measured_rh','measured_co2', 'measured_pm1.0', 'measured_pm2.5', 'measured_pm10','grade','room_no','battv_min', 'batt24v_min','school_no','tracker2wm_avg'], axis=1, inplace=True)
+    df.df.drop(['date', 'time', 'DateTime', 'classroom_category', 'device_code', 'measured_rh', 'measured_co2',
+                'measured_pm1.0', 'measured_pm2.5', 'measured_pm10', 'grade', 'room_no', 'battv_min', 'batt24v_min',
+                'school_no', 'tracker2wm_avg'], axis=1, inplace=True)
+    logger.info("Dropped the unnecessary columns")
 
-    start_date = '2023-03-16'
-    end_date = '2023-11-07'
-    df.df = df.df[(df.df['tmstamp'] >= start_date) & (df.df['tmstamp'] <= end_date)]
+    # removing by date
+    start_date = '16/03/2023'
+    end_date = '07/11/2023'
+    logger.info(f"Dataset size BEFORE dropping the rows by date: {df.df.shape[0]}")
+    df.remove_by_dates('tmstamp', start_date, end_date)
+    logger.info(f"Dataset size AFTER dropping the rows by date: {df.df.shape[0]}")
 
-    df.df = df.df.dropna(subset=['Measured T'])
+    df.df.dropna(subset=['measured_t'])
+
+    df.df.sort_values(by='tmstamp')
+    df.df.reset_index(drop=True)
 
     configs['cat_feats'] = []
     cat_feats = df.get_categorical_columns()
     cat_feats = list(set(cat_feats) - set(["tmstamp"]))
     for cat_feat in cat_feats:
         df.label_encoding(cat_feat)
-        #print(f"Column: {cat_feat}, Uniques: {df.df[cat_feat].nunique()}")
         configs['cat_feats'].append(
             {
-                "column_name" : cat_feat,
+                "column_name": cat_feat,
                 "num_uniques": int(df.df[cat_feat].nunique())
             }
         )
-
+    logger.info(f"Overall encoded {len(cat_feats)} cateforical features")
     cont_feats = df.get_continuous_numeric_columns()
     cont_feats = list(set(cont_feats) - set(['device_code', TARGET_COLUMN]) - set(cat_feats))
-    
+
     # no normalizing of preprocessing of the continious
     configs["num_feats"] = deepcopy(cont_feats)
 
     # Adding the target column to the list of continuous features for scaling later on
     cont_feats.append(TARGET_COLUMN)
-    
+
     for col in df.get_nan_containing_columns():
         method = None
         if col in cont_feats:
@@ -64,23 +73,28 @@ def prepare_data(data_path: str, output_dirpath: str):
             print("Unknown column for the NaN fill: ", col)
             continue
         df.fillna(col, method=method)
-
-    df.df = df.df.sort_values(by='TmStamp')
-    df.df = df.df.reset_index(drop=True)
-    
+    logger.info("Filled the missing values of variables")
     df.slice_sequential(train_prop=TRAIN_SIZE, valid_prop=VALID_SIZE)
-
-    # Apply min-max scaling to the numerical features 
-    df.min_max_scale_data(cont_feats) #to avoid data leakage, so its after slice_sequential
-    
+    logger.info(f"Sliced the data into train, valid, test splits with the proportion: ", 
+                TRAIN_SIZE, VALID_SIZE, round(1. - TRAIN_SIZE - VALID_SIZE, 2))
+    # Apply min-max scaling to the numerical features
+    df.min_max_scale_data(cont_feats)  # to avoid data leakage, so its after slice_sequential
+    logger.info("Applied the MinMaxScaler to the dataset")
     df.save_train_df()
     df.save_valid_df()
     df.save_test_df()
 
     configs["target_feature"] = TARGET_COLUMN
     write_config(os.path.join(output_dirpath, "configs.yaml"), configs)
+    logger.info("Data and assets are saved in the : ", output_dirpath)
+    logger.info(f"Data splits have this sizes each\n \
+        Train: {df.train_df.shape[0]}, \
+        Valid: {df.valid_df.shape[0]}, \
+        Test : {df.test_df.shape[0]}")
 
 if __name__ == "__main__":
-    i_path = sys.argv[1]
-    o_path = sys.argv[2]
-    prepare_data(i_path, o_path)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-d', '--data-path', help="Path to the input dataset", type=str, required=True)
+    parser.add_argument('-o', '--output-dirpath', help="Path to the output directory", type=str, required=True)
+    args = parser.parse_args()
+    prepare_data(args.data_path, args.output_dirpath)

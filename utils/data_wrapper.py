@@ -44,8 +44,12 @@ class DataWrapper:
         self.__preprocess_columns()
 
     @property
-    def df(self):
+    def df(self) -> pd.DataFrame:
         return self._df
+
+    @df.setter
+    def df(self, new_df: pd.DataFrame) -> None:
+        self._df = new_df
 
     def __preprocess_columns(self):
         cols = self._df.columns
@@ -285,6 +289,17 @@ class DataWrapper:
             windows.append((train, valid))
         return windows
 
+    def remove_by_dates(self, column: str, start_date: str, end_date: str) -> None:
+
+        self._df[column] = pd.to_datetime(self._df[column], format='%d/%m/%Y %H:%M')
+        start_date = pd.to_datetime(start_date, format='%d/%m/%Y')
+        end_date = pd.to_datetime(end_date, format='%d/%m/%Y') 
+        self._df = self._df[(self._df[column] >= start_date) & (self._df[column] <= end_date)]
+
+    def sort_by_values(self, column: str) -> None:
+        self._df.sort_values(by=column, inplace=True)
+        self._df.reset_index(drop=True, inplace=True)
+        
     def fillna(self, col_name: str, method: str):
         if "zeroes" == method:
             self._df[col_name].fillna(0, inplace=True)
