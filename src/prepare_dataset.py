@@ -25,7 +25,7 @@ def prepare_data(data_path: str, output_dirpath: str):
     df.df['Minute'] = df.df['DateTime'].dt.minute
 
     # Drop columns
-    df.df.drop(['date', 'time', 'DateTime', 'classroom_category', 'device_code', 'measured_rh', 'measured_co2',
+    df.df.drop(['date', 'time', 'DateTime', 'outdoor_temperature', 'classroom_category', 'device_code', 'measured_rh', 'measured_co2',
                 'measured_pm1.0', 'measured_pm2.5', 'measured_pm10', 'grade', 'room_no', 'battv_min', 'batt24v_min',
                 'school_no', 'tracker2wm_avg'], axis=1, inplace=True)
     logger.info("Dropped the unnecessary columns")
@@ -54,8 +54,11 @@ def prepare_data(data_path: str, output_dirpath: str):
             }
         )
     logger.info(f"Overall encoded {len(cat_feats)} cateforical features")
+    logger.info(cat_feats)
+    
     cont_feats = df.get_continuous_numeric_columns()
-    cont_feats = list(set(cont_feats) - set(['device_code', TARGET_COLUMN]) - set(cat_feats))
+    date_time=['Day','Minute','Hour']
+    cont_feats = list(set(cont_feats) - set(['device_code', TARGET_COLUMN]) - set(cat_feats)  - set(date_time))
 
     # no normalizing of preprocessing of the continious
     configs["num_feats"] = deepcopy(cont_feats)
@@ -80,6 +83,8 @@ def prepare_data(data_path: str, output_dirpath: str):
     # Apply min-max scaling to the numerical features
     df.min_max_scale_data(cont_feats)  # to avoid data leakage, so its after slice_sequential
     logger.info("Applied the MinMaxScaler to the dataset")
+    logger.info(cont_feats)
+    
     df.save_train_df()
     df.save_valid_df()
     df.save_test_df()
