@@ -10,7 +10,7 @@ from utils import Visualizer
 
 def train(config_path: str):
     f = Factory(config_path)
-    f.create_output_dirpath(config_path)
+    f.create_output_dirpath()
     
     train_data = f.create_dataset('train')
     train_loader = DataLoader(train_data, batch_size=f.get_batch_size(), shuffle=False)
