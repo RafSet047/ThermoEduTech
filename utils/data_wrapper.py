@@ -311,6 +311,8 @@ class DataWrapper:
             self._df[col_name].fillna(self._df[col_name].dropna().mode().values[0], inplace=True)
         elif "inter" == method:
             self._df[col_name].interpolate(method='cubic', inplace=True) 
+        elif "ffill" == method:
+            self._df[col_name].fillna(method='ffill', inplace=True)
         else:
             NotImplementedError(f"Not implemented inputation type: {method}")
 
