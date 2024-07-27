@@ -25,9 +25,9 @@ def prepare_data(data_path: str, output_dirpath: str):
     df.df['Minute'] = df.df['DateTime'].dt.minute
 
     # Drop columns
-    df.df.drop(['date', 'time', 'DateTime', 'outdoor_temperature', 'classroom_category', 'device_code', 'measured_rh', 'measured_co2',
-                'measured_pm1.0', 'measured_pm2.5', 'measured_pm10', 'grade', 'room_no', 'battv_min', 'batt24v_min',
-                'school_no', 'tracker2wm_avg'], axis=1, inplace=True)
+    df.df.drop(['date', 'time', 'DateTime', 'datetime','outdoor_temperature_min','outdoor_temperature_mean','outdoor_temperature_max','classroom_category', 'device_code', 'measured_rh_min','measured_rh_mean','measured_rh_max', 'measured_co2_min','measured_co2_mean','measured_co2_max',
+                'measured_pm1.0_min','measured_pm1.0_mean','measured_pm1.0_max', 'measured_pm2.5_min','measured_pm2.5_mean','measured_pm2.5_max', 'measured_pm10_min','measured_pm10_mean','measured_pm10_max', 'grade', 'room_no', 'battv_min_min', 'battv_min_mean','battv_min_max','batt24v_min_min','batt24v_min_mean','batt24v_min_max',
+                'school_no', 'tracker2wm_avg_min','tracker2wm_avg_mean','tracker2wm_avg_max'], axis=1, inplace=True)
     logger.info("Dropped the unnecessary columns")
 
     # removing by date
@@ -40,7 +40,6 @@ def prepare_data(data_path: str, output_dirpath: str):
     df.df.dropna(subset=['measured_t'])
 
     df.df.sort_values(by='tmstamp')
-    df.df.reset_index(drop=True)
 
     configs['cat_feats'] = []
     cat_feats = df.get_categorical_columns()
@@ -69,7 +68,7 @@ def prepare_data(data_path: str, output_dirpath: str):
     for col in df.get_nan_containing_columns():
         method = None
         if col in cont_feats:
-            method = 'inter'
+            method = 'ffill'
         elif col in cat_feats:
             method = "most_freq"
         else:
