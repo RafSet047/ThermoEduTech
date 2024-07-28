@@ -56,6 +56,9 @@ class ThermoDataset(ABC, Dataset):
         Returns:
             Optional[pd.DataFrame]: A copy of the dataframe containing the dataset.
         """
+        return self._df
+    
+    def get_df(self) -> Optional[pd.DataFrame]:
         return self._df.copy()
 
     @property
@@ -85,6 +88,9 @@ class ThermoDataset(ABC, Dataset):
             int: The number of samples in the dataset.
         """
         return self._N
+    
+    def get_scaler_data_path(self) -> str:
+        return self._configs.get("scaler_data_path", "")
 
     @abstractmethod
     def get_dataset(self) -> Any:

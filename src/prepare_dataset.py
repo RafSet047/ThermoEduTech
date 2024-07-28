@@ -8,8 +8,7 @@ import pandas as pd
 TRAIN_SIZE = 0.7
 VALID_SIZE = 0.1
 
-TARGET_COLUMN = "measured_t"
-
+TARGET_COLUMN = "measured_t_mean"
 
 def prepare_data(data_path: str, output_dirpath: str):
     configs = {}
@@ -37,7 +36,7 @@ def prepare_data(data_path: str, output_dirpath: str):
     df.remove_by_dates('tmstamp', start_date, end_date)
     logger.info(f"Dataset size AFTER dropping the rows by date: {df.df.shape[0]}")
 
-    df.df.dropna(subset=['measured_t'])
+    df.df.dropna(subset=[TARGET_COLUMN])
 
     df.df.sort_values(by='tmstamp')
 
@@ -62,8 +61,8 @@ def prepare_data(data_path: str, output_dirpath: str):
     # no normalizing of preprocessing of the continious
     configs["num_feats"] = deepcopy(cont_feats)
 
-    # Adding the target column to the list of continuous features for scaling later on
-    cont_feats.append(TARGET_COLUMN)
+    ## Adding the target column to the list of continuous features for scaling later on
+    #cont_feats.append(TARGET_COLUMN)
 
     for col in df.get_nan_containing_columns():
         method = None
@@ -80,17 +79,17 @@ def prepare_data(data_path: str, output_dirpath: str):
     logger.info(f"Sliced the data into train, valid, test splits with the proportion: ", 
                 TRAIN_SIZE, VALID_SIZE, round(1. - TRAIN_SIZE - VALID_SIZE, 2))
     # Apply min-max scaling to the numerical features
-    df.min_max_scale_data(cont_feats)  # to avoid data leakage, so its after slice_sequential
+    scaler_data_path = df.min_max_scale_data(cont_feats, TARGET_COLUMN)  # to avoid data leakage, so its after slice_sequential
     logger.info("Applied the MinMaxScaler to the dataset")
-    logger.info(cont_feats)
-    
+    configs['scaler_data_path'] = scaler_data_path
+    assert os.path.exists(configs['scaler_data_path'])
     df.save_train_df()
     df.save_valid_df()
     df.save_test_df()
 
     configs["target_feature"] = TARGET_COLUMN
     write_config(os.path.join(output_dirpath, "configs.yaml"), configs)
-    logger.info("Data and assets are saved in the : ", output_dirpath)
+    logger.info(f"Data and assets are saved in the : {output_dirpath}")
     logger.info(f"Data splits have this sizes each\n \
         Train: {df.train_df.shape[0]}, \
         Valid: {df.valid_df.shape[0]}, \

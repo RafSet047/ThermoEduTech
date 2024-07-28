@@ -6,6 +6,7 @@ import numpy as np
 import joblib
 from sklearn.preprocessing import LabelEncoder, StandardScaler, MinMaxScaler
 from scipy.stats import pointbiserialr
+from utils.utils import write_json
 
 class DataWrapper:
     """
@@ -96,6 +97,8 @@ class DataWrapper:
         Returns:
             Tuple[Union[np.array, pd.Series], scaler]: A tuple containing the standardized data and a scaler.
         """
+        if isinstance(x, pd.Series):
+            x = x.values.reshape(-1, 1)
         if scaler is None:
             scaler = StandardScaler()
             x_scaled = scaler.fit_transform(x)
@@ -114,6 +117,8 @@ class DataWrapper:
         Returns:
             Tuple[Union[np.array, pd.Series], MinMaxScaler]: A tuple containing the scaled data and a scaler.
         """
+        if isinstance(x, pd.Series):
+            x = x.values.reshape(-1, 1)
         if scaler is None:
             scaler = MinMaxScaler()
             x_scaled = scaler.fit_transform(x)
@@ -139,31 +144,81 @@ class DataWrapper:
         self._valid_df = self._df.iloc[train_size:train_size+valid_size, :].copy()
         self._test_df = self._df.iloc[train_size+valid_size:, :].copy()
 
-    def standardize_data(self, columns = List[str]):
+    def standardize_data(self, x_columns: List[str], y_column: str):
         """
         Standardizes the training, validation, and test DataFrames using the mean and standard deviation of the training data.
         
         The mean and standard deviation are calculated from the training data and then applied to the validation and test data to standardize them.
         The scaler is also saved as binary file in the 'assets' directory within the output directory.
         """
-        self._train_df[columns], scaler = DataWrapper.standardize(self._train_df[columns])
-        self._valid_df[columns], _ = DataWrapper.standardize(self._valid_df[columns], scaler)
-        self._test_df[columns], _ = DataWrapper.standardize(self._test_df[columns], scaler)
+        self._train_df[x_columns], x_scaler = DataWrapper.standardize(self._train_df[x_columns])
+        self._valid_df[x_columns], _ = DataWrapper.standardize(self._valid_df[x_columns], x_scaler)
+        self._test_df[x_columns], _ = DataWrapper.standardize(self._test_df[x_columns], x_scaler)
 
-        joblib.dump(scaler, os.path.join(self.output_dir, 'assets', 'standard_scaler.joblib'))
+        x_scaler_path = os.path.join(self.output_dir, 'assets', 'standard_scaler_x.joblib')
+        joblib.dump(x_scaler, x_scaler_path)
 
-    def min_max_scale_data(self, columns: List[str]):
+        self._train_df[y_column], y_scaler = DataWrapper.standardize(self._train_df[y_column])
+        self._valid_df[y_column], _ = DataWrapper.standardize(self._valid_df[y_column], y_scaler)
+        self._test_df[y_column], _ = DataWrapper.standardize(self._test_df[y_column], y_scaler)
+
+        y_scaler_path = os.path.join(self.output_dir, 'assets', 'standard_scaler_y.joblib')
+        joblib.dump(y_scaler, y_scaler_path)
+
+        scaler_data = {
+            "x_scaler_path" : x_scaler_path,
+            "y_scaler_path" : y_scaler_path,
+            "x_columns" : x_columns,
+            "y_column" : y_column 
+        }
+        scaler_data_path = os.path.join(self.output_dir, 'assets', 'standard_scaler_data.json')
+        write_json(scaler_data_path, scaler_data)
+        return scaler_data_path
+
+    def min_max_scale_data(self, x_columns: List[str], y_column: str):
         """
         Scales the training, validation, and test DataFrames using min-max scaling with the minimum and maximum values of the training data.
         
         The minimum and maximum values are calculated from the training data and then applied to the validation and test data to scale them.
         The scaler is also saved as CSV files in the 'stats' directory within the output directory.
         """
-        self._train_df[columns], scaler = DataWrapper.min_max_scale(self._train_df[columns])
-        self._valid_df[columns], _ = DataWrapper.min_max_scale(self._valid_df[columns], scaler)
-        self._test_df[columns], _ = DataWrapper.min_max_scale(self._test_df[columns], scaler)
+        self._train_df[x_columns], x_scaler = DataWrapper.min_max_scale(self._train_df[x_columns])
+        self._valid_df[x_columns], _ = DataWrapper.min_max_scale(self._valid_df[x_columns], x_scaler)
+        self._test_df[x_columns], _ = DataWrapper.min_max_scale(self._test_df[x_columns], x_scaler)
 
-        joblib.dump(scaler, os.path.join(self.output_dir, 'assets', 'min_max_scaler.joblib'))
+        x_scaler_path = os.path.join(self.output_dir, 'assets', 'min_max_scaler_x.joblib')
+        joblib.dump(x_scaler, x_scaler_path)
+
+        self._train_df[y_column], y_scaler = DataWrapper.min_max_scale(self._train_df[y_column])
+        self._valid_df[y_column], _ = DataWrapper.min_max_scale(self._valid_df[y_column], y_scaler)
+        self._test_df[y_column], _ = DataWrapper.min_max_scale(self._test_df[y_column], y_scaler)
+
+        y_scaler_path = os.path.join(self.output_dir, 'assets', 'min_max_scaler_y.joblib')
+        joblib.dump(y_scaler, y_scaler_path)
+
+        scaler_data = {
+            "x_scaler_path" : x_scaler_path,
+            "y_scaler_path" : y_scaler_path,
+            "x_columns" : x_columns,
+            "y_column" : y_column 
+        }
+        scaler_data_path = os.path.join(self.output_dir, 'assets', 'min_max_scaler_data.json')
+        write_json(scaler_data_path, scaler_data)
+        return scaler_data_path
+
+    @staticmethod
+    def inverse_rescale_data(x_scaler_path: str, y_scaler_path: str, data: pd.DataFrame, x_columns: List[str], y_column: str) -> pd.DataFrame:
+        assert os.path.exists(x_scaler_path)
+        assert os.path.exists(y_scaler_path)
+        df = data.copy()
+        x_scaler = joblib.load(x_scaler_path)
+        y_scaler = joblib.load(y_scaler_path)
+
+        y = df[y_column].values.reshape(-1, 1)
+
+        df[x_columns] = x_scaler.inverse_transform(df[x_columns])
+        df[y_column] = y_scaler.inverse_transform(y)
+        return df
 
     def remove_outliers(self, column: str):
         Q1 = self._df[column].quantile(0.25)

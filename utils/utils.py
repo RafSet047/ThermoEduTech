@@ -2,20 +2,37 @@ import json
 import yaml
 from typing import *
 
-def load_config(config_file: str) -> Dict[str, Any]:
-    with open(config_file, 'r') as file:
-        config = yaml.safe_load(file)
-    return config
-
 def write_config(config_file: str, data: Dict) -> None:
     with open(config_file, 'w') as file:
         yaml.safe_dump(data, file)
     file.close()
 
+def load_config(config_file: str) -> Dict[str, Any]:
+    with open(config_file, 'r') as file:
+        config = yaml.safe_load(file)
+    return config
+
 def write_json(config_file: str, data: Dict) -> None:
     with open(config_file, 'w') as file:
         json.dump(data, file)
     file.close()
+
+def load_json(config_file: str) -> Dict[str, Any]:
+    with open(config_file, 'r') as file:
+        config = json.load(file)
+    return config
+
+def write_txt(filepath: str, data: List[str]) -> None:
+    with open(filepath, 'w') as w:
+        for line in data:
+            w.write(f"{line}\n")
+    w.close()
+
+def load_txt(filepath: str) -> List[str]:
+    with open(filepath, 'r') as f:
+        lines = f.readlines()
+    f.close()
+    return [line.strip() for line in lines]
 
 def get_instance(module, name: str, config: Dict[str, Any], *args, **kwargs):
     """

@@ -2,16 +2,24 @@ import os
 import json
 import torch
 import argparse
+import joblib
 import numpy as np
+import pandas as pd
 from loguru import logger
 from factory import Factory
-from utils import regression_report, write_json
+from utils import regression_report, write_json, load_json
 
 def evaluate(configs_path: str, subset: str = 'train'):
     f = Factory(configs_path)
     
     dataset = f.create_dataset(subset)
+    scaler_data_path = dataset.get_scaler_data_path()
+    if scaler_data_path == '':
+        raise ValueError("Empty scaler data")
+    scaler_data = load_json(scaler_data_path)
     model = f.create_model()
+
+    scaler = joblib.load(scaler_data['y_scaler_path'])
     
     model.load_state_dict(torch.load(f.get_model_path()))
     model.eval()
@@ -23,8 +31,10 @@ def evaluate(configs_path: str, subset: str = 'train'):
 
     if not isinstance(y_true, np.ndarray):
         y_true = y_true.cpu().detach().numpy()
+        y_true = scaler.inverse_transform(y_true.reshape(-1, 1))
     if not isinstance(y_pred, np.ndarray):
         y_pred = y_pred.cpu().detach().numpy()
+        y_pred = scaler.inverse_transform(y_pred.reshape(-1, 1))
 
     results = regression_report(y_true, y_pred)
     
