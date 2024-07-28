@@ -1,5 +1,6 @@
 import os
 import sys
+from loguru import logger
 from typing import *
 import pandas as pd
 import numpy as np
@@ -138,10 +139,12 @@ class DataWrapper:
         data_size = self._df.shape[0]
 
         train_size = int(data_size * train_prop)
-        valid_size = int(data_size * valid_prop)
-
         self._train_df = self._df.iloc[:train_size, :].copy()
-        self._valid_df = self._df.iloc[train_size:train_size+valid_size, :].copy()
+        if valid_prop > 0.:
+            valid_size = int(data_size * valid_prop)
+            self._valid_df = self._df.iloc[train_size:train_size+valid_size, :].copy()
+        else:
+            valid_size = 0
         self._test_df = self._df.iloc[train_size+valid_size:, :].copy()
 
     def standardize_data(self, x_columns: List[str], y_column: str):
@@ -152,14 +155,16 @@ class DataWrapper:
         The scaler is also saved as binary file in the 'assets' directory within the output directory.
         """
         self._train_df[x_columns], x_scaler = DataWrapper.standardize(self._train_df[x_columns])
-        self._valid_df[x_columns], _ = DataWrapper.standardize(self._valid_df[x_columns], x_scaler)
+        if not self._valid_df is None:
+            self._valid_df[x_columns], _ = DataWrapper.standardize(self._valid_df[x_columns], x_scaler)
         self._test_df[x_columns], _ = DataWrapper.standardize(self._test_df[x_columns], x_scaler)
 
         x_scaler_path = os.path.join(self.output_dir, 'assets', 'standard_scaler_x.joblib')
         joblib.dump(x_scaler, x_scaler_path)
 
         self._train_df[y_column], y_scaler = DataWrapper.standardize(self._train_df[y_column])
-        self._valid_df[y_column], _ = DataWrapper.standardize(self._valid_df[y_column], y_scaler)
+        if not self._valid_df is None:
+            self._valid_df[y_column], _ = DataWrapper.standardize(self._valid_df[y_column], y_scaler)
         self._test_df[y_column], _ = DataWrapper.standardize(self._test_df[y_column], y_scaler)
 
         y_scaler_path = os.path.join(self.output_dir, 'assets', 'standard_scaler_y.joblib')
@@ -183,14 +188,16 @@ class DataWrapper:
         The scaler is also saved as CSV files in the 'stats' directory within the output directory.
         """
         self._train_df[x_columns], x_scaler = DataWrapper.min_max_scale(self._train_df[x_columns])
-        self._valid_df[x_columns], _ = DataWrapper.min_max_scale(self._valid_df[x_columns], x_scaler)
+        if not self._valid_df is None:
+            self._valid_df[x_columns], _ = DataWrapper.min_max_scale(self._valid_df[x_columns], x_scaler)
         self._test_df[x_columns], _ = DataWrapper.min_max_scale(self._test_df[x_columns], x_scaler)
 
         x_scaler_path = os.path.join(self.output_dir, 'assets', 'min_max_scaler_x.joblib')
         joblib.dump(x_scaler, x_scaler_path)
 
         self._train_df[y_column], y_scaler = DataWrapper.min_max_scale(self._train_df[y_column])
-        self._valid_df[y_column], _ = DataWrapper.min_max_scale(self._valid_df[y_column], y_scaler)
+        if not self._valid_df is None:
+            self._valid_df[y_column], _ = DataWrapper.min_max_scale(self._valid_df[y_column], y_scaler)
         self._test_df[y_column], _ = DataWrapper.min_max_scale(self._test_df[y_column], y_scaler)
 
         y_scaler_path = os.path.join(self.output_dir, 'assets', 'min_max_scaler_y.joblib')
@@ -304,23 +311,32 @@ class DataWrapper:
 
     @property
     def train_df(self):
-        return self._train_df
+        return self._train_df if not self._train_df is None else pd.DataFrame()
 
     def save_train_df(self):
+        if self._train_df is None:
+            logger.warning("Train data is empty, can't save it")
+            return
         self._train_df.to_csv(os.path.join(self.output_dir, 'train.csv'), index=False)
 
     @property
     def valid_df(self):
-        return self._valid_df
+        return self._valid_df if not self._valid_df is None else pd.DataFrame()
 
     def save_valid_df(self):
+        if self._valid_df is None:
+            logger.warning("Valid data is empty, can't save it")
+            return
         self._valid_df.to_csv(os.path.join(self.output_dir, 'valid.csv'), index=False)
 
     @property
     def test_df(self):
-        return self._test_df
+        return self._test_df if not self._test_df is None else pd.DataFrame()
 
     def save_test_df(self):
+        if self._test_df is None:
+            logger.warning("Test data is empty, can't save it")
+            return
         self._test_df.to_csv(os.path.join(self.output_dir, 'test.csv'), index=False)
 
     @staticmethod

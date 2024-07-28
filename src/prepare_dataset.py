@@ -1,16 +1,20 @@
 import os
 import argparse
+from typing import *
 from loguru import logger
 from copy import deepcopy
 from utils import DataWrapper, write_config
 import pandas as pd
-
-TRAIN_SIZE = 0.7
-VALID_SIZE = 0.1
+import argparse
 
 TARGET_COLUMN = "measured_t_mean"
 
-def prepare_data(data_path: str, output_dirpath: str):
+def prepare_data(data_path: str,
+                 output_dirpath: str,
+                 train_prop: float = 0.7,
+                 valid_prop: float = 0.1,
+                 scale_method: Optional[str] = None):
+    logger.info(f"Args:  {data_path} ; {output_dirpath} ; {train_prop} ; {valid_prop} ; {scale_method}")
     configs = {}
     df = DataWrapper(data_path, output_dirpath)
 
@@ -61,9 +65,6 @@ def prepare_data(data_path: str, output_dirpath: str):
     # no normalizing of preprocessing of the continious
     configs["num_feats"] = deepcopy(cont_feats)
 
-    ## Adding the target column to the list of continuous features for scaling later on
-    #cont_feats.append(TARGET_COLUMN)
-
     for col in df.get_nan_containing_columns():
         method = None
         if col in cont_feats:
@@ -75,16 +76,24 @@ def prepare_data(data_path: str, output_dirpath: str):
             continue
         df.fillna(col, method=method)
     logger.info("Filled the missing values of variables")
-    df.slice_sequential(train_prop=TRAIN_SIZE, valid_prop=VALID_SIZE)
+    df.slice_sequential(train_prop=train_prop, valid_prop=valid_prop)
     logger.info(f"Sliced the data into train, valid, test splits with the proportion: ", 
-                TRAIN_SIZE, VALID_SIZE, round(1. - TRAIN_SIZE - VALID_SIZE, 2))
-    # Apply min-max scaling to the numerical features
-    scaler_data_path = df.min_max_scale_data(cont_feats, TARGET_COLUMN)  # to avoid data leakage, so its after slice_sequential
-    logger.info("Applied the MinMaxScaler to the dataset")
-    configs['scaler_data_path'] = scaler_data_path
-    assert os.path.exists(configs['scaler_data_path'])
+                train_prop, valid_prop, round(1. - train_prop - valid_prop, 2))
+    # Apply scaling to the numerical features
+    if not scale_method is None:
+        logger.info(f"Appliing the {scale_method} to the dataset")
+        if 'standardize' == scale_method:
+            scaler_data_path = df.standardize_data(cont_feats, TARGET_COLUMN)
+        elif 'min_max' == scale_method:
+            scaler_data_path = df.min_max_scale_data(cont_feats, TARGET_COLUMN)  # to avoid data leakage, so its after slice_sequential
+        else:
+            logger.error(f"Wrong given option for scaling: {scale_method}, choose from [`standardize`, `min_max`]")
+            raise ValueError(scale_method)
+        configs['scaler_data_path'] = scaler_data_path
+        assert os.path.exists(configs['scaler_data_path'])
     df.save_train_df()
-    df.save_valid_df()
+    if valid_prop > 0.:
+        df.save_valid_df()
     df.save_test_df()
 
     configs["target_feature"] = TARGET_COLUMN
@@ -99,5 +108,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', '--data-path', help="Path to the input dataset", type=str, required=True)
     parser.add_argument('-o', '--output-dirpath', help="Path to the output directory", type=str, required=True)
+    parser.add_argument('-t', '--train-prop', help="Train proportion in data [0;1]", type=float, required=False, default=0.8)
+    parser.add_argument('-v', '--valid-prop', help="Valid proportion in data [0;1]", type=float, required=False, default=0.2)
+    parser.add_argument('-s', '--scale-method', help="Scale method of data, optional", type=str, required=False, default=None, choices=['standardize', 'min_max'])
     args = parser.parse_args()
-    prepare_data(args.data_path, args.output_dirpath)
+    prepare_data(args.data_path, args.output_dirpath, args.train_prop, args.valid_prop, args.scale_method)
