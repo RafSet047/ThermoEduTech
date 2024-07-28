@@ -7,7 +7,7 @@ from utils import DataWrapper, write_config
 import pandas as pd
 import argparse
 
-TARGET_COLUMN = "measured_t_mean"
+TARGET_COLUMN = "measured_t_max"
 
 def prepare_data(data_path: str,
                  output_dirpath: str,
@@ -58,10 +58,15 @@ def prepare_data(data_path: str,
     logger.info(f"Overall encoded {len(cat_feats)} cateforical features")
     logger.info(cat_feats)
     
+    logger.info(f"Removing the `measured_t_*` columns, except : {TARGET_COLUMN}")
+    for feat in df.df.columns:
+        if 'measured_t_' in feat and feat != TARGET_COLUMN:
+            df.df.drop(labels=[feat], axis=1, inplace=True)
+    
     cont_feats = df.get_continuous_numeric_columns()
     date_time=['Day','Minute','Hour']
     cont_feats = list(set(cont_feats) - set(['device_code', TARGET_COLUMN]) - set(cat_feats)  - set(date_time))
-
+        
     # no normalizing of preprocessing of the continious
     configs["num_feats"] = deepcopy(cont_feats)
 
