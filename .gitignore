@@ -2,6 +2,7 @@ dl-proj/
 .dl-proj/
 venv/
 dataset/
+dataset_unscaled/
 *.zip
 *.xlsx
 .DS_Store

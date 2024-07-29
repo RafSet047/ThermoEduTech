@@ -9,7 +9,7 @@ from src.shared_state import SharedState
 class BaseModel(ABC, Module):
     def __init__(self, config_path: str, state: Optional[SharedState] = None, device: str = 'cpu', *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self._configs = load_config(config_path)
+        self._configs = load_config(config_path) if config_path != "" else {}
         self._state = state
         self._device = device
 
