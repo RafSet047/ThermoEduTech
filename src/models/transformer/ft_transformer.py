@@ -122,7 +122,7 @@ class NumericalEmbedder(nn.Module):
 
 # main class
 
-class FTTransformer(BaseModel):
+class FTabTransformer(BaseModel):
     def __init__(
         self,
         configs_path: str,

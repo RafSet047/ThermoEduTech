@@ -9,7 +9,7 @@ from loguru import logger
 from factory import Factory
 from utils import regression_report, write_json, load_json
 
-def evaluate(configs_path: str, subset: str = 'train'):
+def evaluate(configs_path: str, subset: str = 'train', use_inverse_rescale: bool = True):
     f = Factory(configs_path)
     
     dataset = f.create_dataset(subset)
@@ -19,7 +19,9 @@ def evaluate(configs_path: str, subset: str = 'train'):
     scaler_data = load_json(scaler_data_path)
     model = f.create_model()
 
-    scaler = joblib.load(scaler_data['y_scaler_path'])
+    scaler = None
+    if use_inverse_rescale:
+        scaler = joblib.load(scaler_data['y_scaler_path'])
     
     model.load_state_dict(torch.load(f.get_model_path()))
     model.eval()
@@ -31,10 +33,12 @@ def evaluate(configs_path: str, subset: str = 'train'):
 
     if not isinstance(y_true, np.ndarray):
         y_true = y_true.cpu().detach().numpy()
-        y_true = scaler.inverse_transform(y_true.reshape(-1, 1))
+        if not scaler is None:
+            y_true = scaler.inverse_transform(y_true.reshape(-1, 1))
     if not isinstance(y_pred, np.ndarray):
         y_pred = y_pred.cpu().detach().numpy()
-        y_pred = scaler.inverse_transform(y_pred.reshape(-1, 1))
+        if not scaler is None:
+            y_pred = scaler.inverse_transform(y_pred.reshape(-1, 1))
 
     results = regression_report(y_true, y_pred)
     
@@ -48,5 +52,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", '--config-path', help='Path to config path from training results directory for eval', type=str, required=True)
     parser.add_argument("-s", '--subset', help='Subset of data for evaluation', type=str, required=False, default='test', choices=['train', 'valid', 'test'])
+    parser.add_argument('--inverse-rescale', help='Whether to load the scaler from the training and do the rescaling on data', default=False, action='store_true')
     args = parser.parse_args()
-    evaluate(args.config_path, args.subset)
+    evaluate(args.config_path, args.subset, args.inverse_rescale)
