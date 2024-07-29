@@ -25,7 +25,6 @@ def prepare_data(data_path: str,
     df.df['Month'] = df.df['DateTime'].dt.month
     df.df['Day'] = df.df['DateTime'].dt.day
     df.df['Hour'] = df.df['DateTime'].dt.hour
-    df.df['Minute'] = df.df['DateTime'].dt.minute
 
     # Drop columns
     df.df.drop(['date', 'time', 'DateTime', 'datetime','outdoor_temperature_min','outdoor_temperature_mean','outdoor_temperature_max','classroom_category', 'device_code', 'measured_rh_min','measured_rh_mean','measured_rh_max', 'measured_co2_min','measured_co2_mean','measured_co2_max',
@@ -83,6 +82,10 @@ def prepare_data(data_path: str,
             continue
         df.fillna(col, method=method)
     logger.info("Filled the missing values of variables")
+
+    df.df.drop(labels=['tmstamp'], axis=1, inplace=True)
+    logger.info("Dropped tmstamp column")
+
     df.slice_sequential(train_prop=train_prop, valid_prop=valid_prop)
     logger.info(f"Sliced the data into train, valid, test splits with the proportion: ", 
                 train_prop, valid_prop, round(1. - train_prop - valid_prop, 2))
