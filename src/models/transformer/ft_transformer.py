@@ -135,14 +135,14 @@ class FTabTransformer(BaseModel):
         assert all(map(lambda n: n > 0, categories)), 'number of each category must be positive'
         assert len(categories) + num_continuous > 0, 'input shape must not be null'
 
-        dim = self._configs.get("dim", 32)
+        dim = self._configs.get("dim", 16)
         depth = self._configs.get("depth", 6)
         heads = self._configs.get("heads", 8)
-        dim_head = self._configs.get("dim_head", 16)
+        dim_head = self._configs.get("dim_head", 32)
         dim_out = self._configs.get("dim_out", 1)
         num_special_tokens = self._configs.get("num_special_tokens", 2)
-        attn_dropout = self._configs.get("attn_dropout", 0.)
-        ff_dropout = self._configs.get("ff_dropout", 0.)
+        attn_dropout = self._configs.get("attn_dropout", 0.1)
+        ff_dropout = self._configs.get("ff_dropout", 0.1)
 
         # categories related calculations
         self.device = device

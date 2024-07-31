@@ -13,16 +13,15 @@ def evaluate(configs_path: str, subset: str = 'train', use_inverse_rescale: bool
     f = Factory(configs_path)
     
     dataset = f.create_dataset(subset)
-    scaler_data_path = dataset.get_scaler_data_path()
-    if scaler_data_path == '':
-        raise ValueError("Empty scaler data")
-    scaler_data = load_json(scaler_data_path)
-    model = f.create_model()
+    dataset.prepare_data()
 
     scaler = None
     if use_inverse_rescale:
+        scaler_data_path = dataset.get_scaler_data_path()
+        scaler_data = load_json(scaler_data_path)
         scaler = joblib.load(scaler_data['y_scaler_path'])
     
+    model = f.create_model()
     model.load_state_dict(torch.load(f.get_model_path()))
     model.eval()
 

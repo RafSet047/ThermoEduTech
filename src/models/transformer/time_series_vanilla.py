@@ -24,7 +24,7 @@ class PositionalEncoding(nn.Module):
         x = x + self.pe[:, :x.size(1)]
         return x
 
-class TimeSeriesVanillaTransformer(BaseModel):
+class VanillaTransformer(BaseModel):
     #def __init__(self, num_features, d_model, nhead, num_encoder_layers, dim_feedforward, max_len, dropout=0.1):
     def __init__(self, 
                  configs_path: str,
@@ -35,7 +35,7 @@ class TimeSeriesVanillaTransformer(BaseModel):
 
         num_features = state.num_features
         d_model = self._configs.get('d_model', 32)
-        nhead = self._configs.get('nhead', 2)
+        nhead = self._configs.get('nhead', 4)
         num_encoder_layers = self._configs.get('num_encoder_layers', 2)
         dim_feedforward = self._configs.get('d_ffn', 64)
         max_len = self._configs.get('max_len', 200)
@@ -50,7 +50,7 @@ class TimeSeriesVanillaTransformer(BaseModel):
         self.d_model = d_model
         self.init_weights()
 
-        logger.info("TimeSeriesVanillaTransformer is initialized")
+        logger.info("VanillaTransformer is initialized")
 
     def init_weights(self):
         initrange = 0.1
@@ -82,7 +82,7 @@ if __name__ == "__main__":
     
     state = SharedState()
     state.num_features = F
-    model = TimeSeriesVanillaTransformer(
+    model = VanillaTransformer(
         "",
         state,
         'cpu'

@@ -195,17 +195,17 @@ class DataWrapper:
         x_scaler_path = os.path.join(self.output_dir, 'assets', 'min_max_scaler_x.joblib')
         joblib.dump(x_scaler, x_scaler_path)
 
-        self._train_df[y_column], y_scaler = DataWrapper.min_max_scale(self._train_df[y_column])
-        if not self._valid_df is None:
-            self._valid_df[y_column], _ = DataWrapper.min_max_scale(self._valid_df[y_column], y_scaler)
-        self._test_df[y_column], _ = DataWrapper.min_max_scale(self._test_df[y_column], y_scaler)
+        #self._train_df[y_column], y_scaler = DataWrapper.min_max_scale(self._train_df[y_column])
+        #if not self._valid_df is None:
+        #    self._valid_df[y_column], _ = DataWrapper.min_max_scale(self._valid_df[y_column], y_scaler)
+        #self._test_df[y_column], _ = DataWrapper.min_max_scale(self._test_df[y_column], y_scaler)
 
-        y_scaler_path = os.path.join(self.output_dir, 'assets', 'min_max_scaler_y.joblib')
-        joblib.dump(y_scaler, y_scaler_path)
+        #y_scaler_path = os.path.join(self.output_dir, 'assets', 'min_max_scaler_y.joblib')
+        #joblib.dump(y_scaler, y_scaler_path)
 
         scaler_data = {
             "x_scaler_path" : x_scaler_path,
-            "y_scaler_path" : y_scaler_path,
+            #"y_scaler_path" : y_scaler_path,
             "x_columns" : x_columns,
             "y_column" : y_column 
         }

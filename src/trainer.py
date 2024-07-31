@@ -153,8 +153,8 @@ class ModelTrainer:
             val_result = self.test_step()
             if not val_result is None:
                 _, avg_val_loss = val_result
-                for scheduler in self._schedulers:
-                    scheduler.step(avg_val_loss)
+                #for scheduler in self._schedulers:
+                #    scheduler.step(avg_val_loss)
                 if avg_val_loss <= best_loss:
                     best_loss = avg_val_loss
                     self._best_weights = self._model.state_dict()

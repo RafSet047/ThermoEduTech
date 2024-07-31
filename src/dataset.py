@@ -93,6 +93,10 @@ class ThermoDataset(ABC, Dataset):
         return self._configs.get("scaler_data_path", "")
 
     @abstractmethod
+    def prepare_data(self):
+        pass
+
+    @abstractmethod
     def get_dataset(self) -> Any:
         """
         Abstract method to be implemented by subclasses for retrieving the dataset.
