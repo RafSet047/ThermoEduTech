@@ -38,7 +38,7 @@ class VanillaTransformer(BaseModel):
         nhead = self._configs.get('nhead', 4)
         num_encoder_layers = self._configs.get('num_encoder_layers', 2)
         dim_feedforward = self._configs.get('d_ffn', 64)
-        max_len = self._configs.get('max_len', 200)
+        max_len = self._configs.get('max_len', 10)
         dropout = self._configs.get('dropout', 0.2)
         d_output = self._configs.get('d_output', 1)
 

@@ -72,7 +72,6 @@ class TimeSeriesTransformerDataset(ThermoDataset):
         do_augment = random.choices([True, False], weights=[0.8, 0.2], k=1)[0]
         if do_augment:
             x = self.augment.apply_augmentation(torch.unsqueeze(x, dim=0)).squeeze(dim=0)
-            return x, y
         return x, y
 
 if __name__ == "__main__":

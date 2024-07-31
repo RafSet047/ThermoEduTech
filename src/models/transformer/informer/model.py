@@ -24,12 +24,12 @@ class Informer(BaseModel):
         label_len = seq_len
         out_len = self._configs.get('out_len', 1)
         factor = self._configs.get('factor', 5)
-        d_model = self._configs.get('d_model', 128)
-        n_heads = self._configs.get('n_heads', 2)
-        e_layers = self._configs.get('e_layers', 2)
+        d_model = self._configs.get('d_model', 64)
+        n_heads = self._configs.get('n_heads', 4)
+        e_layers = self._configs.get('e_layers', 3)
         d_layers = self._configs.get('d_layers', 2)
-        d_ff = self._configs.get('d_ff', 256)
-        dropout = self._configs.get('dropout', 0.2)
+        d_ff = self._configs.get('d_ff', 128)
+        dropout = self._configs.get('dropout', 0.125)
         attn = self._configs.get('attn', 'prob')
         embed = self._configs.get('embed', 'fixed') 
         freq = self._configs.get('h')
@@ -37,7 +37,7 @@ class Informer(BaseModel):
         output_attention = self._configs.get('output_attention', False)
         distil = self._configs.get('distil', False)
         mix = self._configs.get('mix', False)
-        max_len = self._configs.get("max_len", 200)
+        max_len = self._configs.get("max_len", 10)
 
         self.pred_len = out_len
         self.attn = attn

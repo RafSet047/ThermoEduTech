@@ -151,7 +151,7 @@ class Visualizer:
         plt.show()
 
     @staticmethod
-    def plot_train_curves(train_losses: List[float], valid_losses: List[str], save_path: str) -> None:
+    def plot_train_curves(train_losses: List[float], valid_losses: List[str], save_path: Optional[str] = None) -> None:
         """
         Plots the training and validation losses over epochs using Seaborn.
 
@@ -175,7 +175,40 @@ class Visualizer:
         plt.ylabel('Loss')
         plt.grid(True)
         plt.tight_layout()
-        plt.savefig(save_path)
+        if save_path is None:
+            plt.show()
+        else:
+            plt.savefig(save_path)
+
+    @staticmethod
+    def plot_predictions(y_true: List[float], y_pred: List[str], save_path: Optional[str] = None) -> None:
+        """
+        Plots the training and validation losses over epochs using Seaborn.
+
+        Args:
+            train_losses (list of float): List of training losses for each epoch.
+            val_losses (list of float): List of validation losses for each epoch.
+        """
+        hours = range(1, len(y_true) + 1)
+        data = pd.DataFrame({
+            'hours': hours,
+            'Actual': y_true,
+            'Predictions': y_pred
+        })
+        data = data.melt(id_vars='hours', var_name='values', value_name='true_vs_pred')
+        
+        plt.figure(figsize=(10, 6))
+        sns.lineplot(data=data, x='hours', y='true_vs_pred', hue='values', marker='o')
+        
+        plt.title('Test set Actual and Predicted values')
+        plt.xlabel('Hours')
+        plt.ylabel('Temperature')
+        plt.grid(True)
+        plt.tight_layout()
+        if save_path is None:
+            plt.show()
+        else:
+            plt.savefig(save_path)
 
 if __name__ == "__main__":
     tr = [0.9, 0.87, 0.79, 0.54, 0.36, 0.22]
