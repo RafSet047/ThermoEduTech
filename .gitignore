@@ -11,6 +11,5 @@ dataset_unscaled/
 __pycache__
 .tmp/
 tmp/
-*.pt
 results/
 .venv/
