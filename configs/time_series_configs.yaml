@@ -1,38 +1,43 @@
 model:
-  type: STabTransformer
+  type: Informer
   args:
     configs_path: "src/models/transformer/configs.yaml"
     device: 'cpu'
 
 train:
-  type: ThermoTransformerDataset
+  type: TimeSeriesTransformerDataset
   args:
     data_path: 'dataset/train.csv'
     configs_path: 'dataset/configs.yaml'
+    augment: false
     device: 'cpu'
 
 valid:
-  type: ThermoTransformerDataset 
+  type: TimeSeriesTransformerDataset 
   args:
     data_path: 'dataset/valid.csv'
     configs_path: 'dataset/configs.yaml'
+    augment: false
     device: 'cpu'
 
 test:
-  type: ThermoTransformerDataset
+  type: TimeSeriesTransformerDataset
   args:
     data_path: 'dataset/test.csv'
     configs_path: 'dataset/configs.yaml'
+    augment: false
     device: 'cpu'
 
 optimizer:
-  type: Adam
+  type: AdamW
   args:
     lr: 0.001
 
 criterion:
   type: HuberLoss
-  args: {}
+  args: 
+    reduction: mean
+    delta: 1.0
 
 schedulers:
   type: ReduceLROnPlateau
@@ -40,5 +45,5 @@ schedulers:
 
 device: cpu
 num_epochs: 40
-batch_size: 512
-output_dirpath: 'results/tab_transformer_last'
+batch_size: 1024
+output_dirpath: 'results/informer_last'

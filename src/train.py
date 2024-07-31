@@ -34,7 +34,7 @@ def train(config_path: str):
                     schedulers=schedulers
                     )
     output_dirpath = f.get_output_dirpath()
-    print("Starting the training process...")
+    logger.info("Starting the training process...")
     train_loss, valid_loss = t.train(f.get_epochs())
     best_weights = t.get_best_weights()
     torch.save(best_weights, os.path.join(output_dirpath, 'model.pt'))

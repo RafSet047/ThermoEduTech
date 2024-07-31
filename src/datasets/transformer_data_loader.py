@@ -8,6 +8,8 @@ from src.shared_state import SharedState
 import warnings
 warnings.filterwarnings("ignore")
 
+from loguru import logger
+
 class ThermoTransformerDataset(ThermoDataset):
     """
     A dataset class specifically designed for transformer-based models handling thermographic data.
@@ -68,9 +70,16 @@ class ThermoTransformerDataset(ThermoDataset):
         Prepares tensors for numerical features, categorical features, and target values
         from the dataframe.
         """
+        self._df[self.__target_feature] = self._df[self.__target_feature].shift(-1) # ground truth is the next hour
+        self._df.dropna(axis=0, inplace=True) # removing the last row
+        self._N = self._df.shape[0]
+
         self.__X_num = torch.as_tensor(self._df[self.__numerical_features].values, dtype=torch.float32, device=self._device)
         self.__X_cat = torch.as_tensor(self._df[self.__cat_features].values, dtype=torch.int32, device=self._device)
         self.__Y = torch.as_tensor(self._df[self.__target_feature].values, dtype=torch.float32, device=self._device)
+
+    def prepare_data(self):
+        return super().prepare_data()
 
     def get_dataset(self) -> Any:
         """

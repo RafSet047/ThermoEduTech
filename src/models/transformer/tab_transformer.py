@@ -167,14 +167,14 @@ class TabTransformer(BaseModel):
         dim = self._configs.get("dim", 32)
         depth = self._configs.get("depth", 6)
         heads = self._configs.get("heads", 8)
-        dim_head = self._configs.get("dim_head", 16)
+        dim_head = self._configs.get("dim_head", 64)
         dim_out = self._configs.get("dim_out", 1)
         mlp_hidden_mults = self._configs.get("mlp_hidden_mults", (4, 2))
         mlp_act = self._configs.get("mlp_act", nn.ReLU())
         num_special_tokens = self._configs.get("num_special_tokens", 2)
         continuous_mean_std = None
-        attn_dropout = self._configs.get("attn_dropout", 0.)
-        ff_dropout = self._configs.get("ff_dropout", 0.)
+        attn_dropout = self._configs.get("attn_dropout", 0.125)
+        ff_dropout = self._configs.get("ff_dropout", 0.125)
         use_shared_categ_embed = True,
         shared_categ_dim_divisor = 8.   # in paper, they reserve dimension / 8 for category shared embedding
 

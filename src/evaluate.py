@@ -7,22 +7,23 @@ import numpy as np
 import pandas as pd
 from loguru import logger
 from factory import Factory
-from utils import regression_report, write_json, load_json
+from utils import regression_report, write_json, load_json, Visualizer
+
+TEST_PERIOD = 168
 
 def evaluate(configs_path: str, subset: str = 'train', use_inverse_rescale: bool = True):
     f = Factory(configs_path)
     
     dataset = f.create_dataset(subset)
-    scaler_data_path = dataset.get_scaler_data_path()
-    if scaler_data_path == '':
-        raise ValueError("Empty scaler data")
-    scaler_data = load_json(scaler_data_path)
-    model = f.create_model()
+    dataset.prepare_data()
 
     scaler = None
     if use_inverse_rescale:
+        scaler_data_path = dataset.get_scaler_data_path()
+        scaler_data = load_json(scaler_data_path)
         scaler = joblib.load(scaler_data['y_scaler_path'])
     
+    model = f.create_model()
     model.load_state_dict(torch.load(f.get_model_path()))
     model.eval()
 
@@ -31,17 +32,25 @@ def evaluate(configs_path: str, subset: str = 'train', use_inverse_rescale: bool
     with torch.no_grad():
         y_pred = model(X)
 
+    y_pred_rescaled, y_true_rescaled = None, None
     if not isinstance(y_true, np.ndarray):
         y_true = y_true.cpu().detach().numpy()
         if not scaler is None:
-            y_true = scaler.inverse_transform(y_true.reshape(-1, 1))
+            y_true_rescaled = scaler.inverse_transform(y_true.reshape(-1, 1))
+        else:
+            y_true_rescaled = y_true
     if not isinstance(y_pred, np.ndarray):
         y_pred = y_pred.cpu().detach().numpy()
         if not scaler is None:
-            y_pred = scaler.inverse_transform(y_pred.reshape(-1, 1))
+            y_pred_rescaled = scaler.inverse_transform(y_pred.reshape(-1, 1))
+        else:
+            y_pred_rescaled = y_pred
 
     results = regression_report(y_true, y_pred)
     
+    Visualizer.plot_predictions(y_true=y_true_rescaled[-TEST_PERIOD:, 0], 
+                                y_pred=y_pred_rescaled[-TEST_PERIOD:, 0], 
+                                save_path=os.path.join(f.get_output_dirpath(), 'actual_vs_pred.png')) 
     logger.info(f"Results of the : {f.get_model_path()} model in `test` data") 
     logger.info(json.dumps(results, indent=2))
 
