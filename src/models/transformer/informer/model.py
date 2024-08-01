@@ -27,7 +27,7 @@ class Informer(BaseModel):
         d_model = self._configs.get('d_model', 64)
         n_heads = self._configs.get('n_heads', 4)
         e_layers = self._configs.get('e_layers', 3)
-        d_layers = self._configs.get('d_layers', 2)
+        d_layers = self._configs.get('d_layers', 3)
         d_ff = self._configs.get('d_ff', 128)
         dropout = self._configs.get('dropout', 0.125)
         attn = self._configs.get('attn', 'prob')

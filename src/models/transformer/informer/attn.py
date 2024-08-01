@@ -100,13 +100,17 @@ class ProbAttention(nn.Module):
     def forward(self, queries, keys, values, attn_mask):
         B, L_Q, H, D = queries.shape
         _, L_K, _, _ = keys.shape
+        L_K_tensor = torch.tensor(L_K, dtype=torch.float32)
+        L_Q_tensor = torch.tensor(L_Q, dtype=torch.float32)
 
         queries = queries.transpose(2,1)
         keys = keys.transpose(2,1)
         values = values.transpose(2,1)
 
-        U_part = self.factor * np.ceil(np.log(L_K)).astype('int').item() # c*ln(L_k)
-        u = self.factor * np.ceil(np.log(L_Q)).astype('int').item() # c*ln(L_q) 
+        #U_part = self.factor * np.ceil(np.log(L_K)).astype('int').item() # c*ln(L_k)
+        #u = self.factor * np.ceil(np.log(L_Q)).astype('int').item() # c*ln(L_q) 
+        U_part = (self.factor * torch.ceil(torch.log(L_K_tensor))).int().item()
+        u = (self.factor * torch.ceil(torch.log(L_Q_tensor))).int().item()
 
         U_part = U_part if U_part<L_K else L_K
         u = u if u<L_Q else L_Q

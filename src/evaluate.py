@@ -1,5 +1,7 @@
 import os
 import json
+from typing import *
+from copy import deepcopy
 import torch
 import argparse
 import joblib
@@ -11,7 +13,7 @@ from utils import regression_report, write_json, load_json, Visualizer
 
 TEST_PERIOD = 168
 
-def evaluate(configs_path: str, subset: str = 'train', use_inverse_rescale: bool = True):
+def evaluate(configs_path: str, subset: str = 'train', use_inverse_rescale: bool = True, model_output_path: Optional[str] = None):
     f = Factory(configs_path)
     
     dataset = f.create_dataset(subset)
@@ -28,6 +30,7 @@ def evaluate(configs_path: str, subset: str = 'train', use_inverse_rescale: bool
     model.eval()
 
     X, y_true = dataset.get_dataset()
+    x_copy = deepcopy(X)
     y_pred = None
     with torch.no_grad():
         y_pred = model(X)
@@ -55,6 +58,14 @@ def evaluate(configs_path: str, subset: str = 'train', use_inverse_rescale: bool
     logger.info(json.dumps(results, indent=2))
 
     write_json(os.path.join(f.get_output_dirpath(), 'test_results.json'), results)
+    if not model_output_path is None:
+        if isinstance(x_copy, tuple):
+            traced_model = torch.jit.trace(model, (x_copy, ), check_trace=False)
+        else:
+            print("AAAAAAAAAAAAAA")
+            traced_model = torch.jit.trace(model, x_copy, check_trace=False)
+        traced_model.save(model_output_path)
+        logger.info(f"Successfully save model in the {model_output_path}")
     return
 
 if __name__ == "__main__":
@@ -62,5 +73,6 @@ if __name__ == "__main__":
     parser.add_argument("-c", '--config-path', help='Path to config path from training results directory for eval', type=str, required=True)
     parser.add_argument("-s", '--subset', help='Subset of data for evaluation', type=str, required=False, default='test', choices=['train', 'valid', 'test'])
     parser.add_argument('--inverse-rescale', help='Whether to load the scaler from the training and do the rescaling on data', default=False, action='store_true')
+    parser.add_argument("-m", '--model-path', help='Output model path', type=str, required=False, default=None)
     args = parser.parse_args()
-    evaluate(args.config_path, args.subset, args.inverse_rescale)
+    evaluate(args.config_path, args.subset, args.inverse_rescale, args.model_path)
