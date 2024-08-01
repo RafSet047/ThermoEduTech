@@ -33,13 +33,21 @@ This project has this directory structure
 In order to train the models, which for this project 3 types are used, **Baseline**(`sklearn`, `xgboost`), **RNN**/**Transformers**(`torch`) with various configurations can be done either by looking at the `notebooks` directory or in the `src/train.py`.
 
 * `Baseline Models`
-
-  #TODO
-
+  ```
+  ./notebooks/baseline.ipynb
+  ```
 * `RNN Models`
-
-   #TODO
-
+  ```
+   ./notebooks/rnn.ipynb
+  ```
+* `GRU and CNN Models`
+  ```
+   ./notebooks/CNN_GRU.ipynb
+  ```
+* `LSTM Models`
+  ```
+  ./notebooks/LSTM.ipynb
+  ```
 * `Transformers`
     ```
     python src/train.py -c configs/transformer_configs.yaml
@@ -48,3 +56,4 @@ In order to train the models, which for this project 3 types are used, **Baselin
   ```
   python src/evaluate.py -c path/to/train/resulting/directory/configs.yaml
   ```
+  Also check the `notebooks/Results.ipynb` where the comparison of each model is provided.
